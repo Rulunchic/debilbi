@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <title>Debilbi</title>
+    <meta name="name" content="Debilbi" />
+    <meta name="author" content="Debilbi Team" />
+    <meta
+      name="description"
+      content="Debilbi is a Matrix-powered voice, chat, and screen sharing service."
+    />
+    <meta
+      name="keywords"
+      content="debilbi, matrix, voice chat, screenshare, chat, messenger"
+    />
+
+    <meta property="og:title" content="Debilbi" />
+    <meta property="og:image" content="/res/svg/debilbi.svg" />
+    <meta
+      property="og:description"
+      content="Debilbi is a Matrix-powered voice, chat, and screen sharing service."
+    />
+    <meta name="theme-color" content="#000000" />
+
+    <link id="favicon" rel="shortcut icon" href="/res/svg/debilbi.svg" />
+
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Debilbi" />
+    <meta name="apple-mobile-web-app-title" content="Debilbi" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <link rel="apple-touch-icon" href="/res/svg/debilbi.svg" />
+  </head>
+  <body id="appBody">
+    <script>
+      window.global ||= window;
+    </script>
+    <div id="root"></div>
+    <div id="portalContainer"></div>
+    <script type="module" src="./src/index.tsx"></script>
+  </body>
+</html>

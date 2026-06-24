@@ -1,0 +1,19 @@
+{
+  "name": "Debilbi",
+  "short_name": "Debilbi",
+  "description": "Debilbi is your Matrix-powered voice and chat service.",
+  "dir": "auto",
+  "lang": "en-US",
+  "display": "standalone",
+  "orientation": "portrait",
+  "start_url": "./",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [
+    {
+      "src": "/res/svg/debilbi.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

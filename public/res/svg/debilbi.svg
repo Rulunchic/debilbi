@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Debilbi logo">
+  <rect width="64" height="64" rx="18" fill="#111827" />
+  <path
+    d="M17 20h30a10 10 0 0 1 10 10v6a10 10 0 0 1-10 10H32l-8 7v-7h-7a10 10 0 0 1-10-10v-6a10 10 0 0 1 10-10Z"
+    fill="#2563eb"
+  />
+  <text
+    x="32"
+    y="39"
+    text-anchor="middle"
+    font-family="Arial, Helvetica, sans-serif"
+    font-size="18"
+    font-weight="800"
+    fill="#ffffff"
+  >
+    DB
+  </text>
+</svg>
