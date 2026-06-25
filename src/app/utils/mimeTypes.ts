@@ -8,6 +8,14 @@ export const IMAGE_MIME_TYPES = [
 ];
 
 export const VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/ogg', 'video/quicktime'];
+const VIDEO_EXT_TO_MIME_TYPE: Record<string, string> = {
+  mp4: 'video/mp4',
+  m4v: 'video/mp4',
+  webm: 'video/webm',
+  ogv: 'video/ogg',
+  ogg: 'video/ogg',
+  mov: 'video/quicktime',
+};
 
 export const AUDIO_MIME_TYPES = [
   'audio/mp4',
@@ -143,4 +151,12 @@ export const getFileNameWithoutExt = (fileName: string): string => {
   const extStart = fileName.lastIndexOf('.');
   if (extStart === 0 || extStart === -1) return fileName;
   return fileName.slice(0, extStart);
+};
+
+export const getVideoMimeType = (mimeType: string | undefined, fileName?: string) => {
+  const safeMimeType = getBlobSafeMimeType(mimeType ?? '');
+  if (safeMimeType.startsWith('video/')) return safeMimeType;
+
+  const ext = getFileNameExt(fileName ?? '').toLowerCase();
+  return VIDEO_EXT_TO_MIME_TYPE[ext] ?? FALLBACK_MIMETYPE;
 };

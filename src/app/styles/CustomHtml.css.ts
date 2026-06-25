@@ -16,7 +16,21 @@ export const MarginSpaced = style({
   },
 });
 
-export const Paragraph = style([DefaultReset]);
+export const Paragraph = style([
+  DefaultReset,
+  {
+    marginTop: 0,
+    marginBottom: config.space.S100,
+    selectors: {
+      '&:first-child': {
+        marginTop: 0,
+      },
+      '&:last-child': {
+        marginBottom: 0,
+      },
+    },
+  },
+]);
 
 export const Heading = style([
   DefaultReset,

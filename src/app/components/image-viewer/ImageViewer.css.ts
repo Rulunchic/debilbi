@@ -22,9 +22,26 @@ export const ImageViewerHeader = style([
 export const ImageViewerContent = style([
   DefaultReset,
   {
+    position: 'relative',
     backgroundColor: color.Background.Container,
     color: color.Background.OnContainer,
     overflow: 'hidden',
+  },
+]);
+
+export const ImageViewerStage = style([
+  DefaultReset,
+  {
+    position: 'relative',
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    touchAction: 'none',
+    background:
+      'radial-gradient(circle at center, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0) 40%), #000',
   },
 ]);
 
@@ -37,6 +54,9 @@ export const ImageViewerImg = style([
     maxWidth: '100%',
     maxHeight: '100%',
     backgroundColor: color.Surface.Container,
-    transition: 'transform 100ms linear',
+    transformOrigin: 'center center',
+    userSelect: 'none',
+    pointerEvents: 'none',
+    willChange: 'transform',
   },
 ]);

@@ -16,27 +16,27 @@ const SpacingVariant = styleVariants({
   },
   '100': {
     vars: {
-      [SpacingVar]: config.space.S100,
+      [SpacingVar]: config.space.S0,
     },
   },
   '200': {
     vars: {
-      [SpacingVar]: config.space.S200,
+      [SpacingVar]: config.space.S100,
     },
   },
   '300': {
     vars: {
-      [SpacingVar]: config.space.S300,
+      [SpacingVar]: config.space.S200,
     },
   },
   '400': {
     vars: {
-      [SpacingVar]: config.space.S400,
+      [SpacingVar]: config.space.S300,
     },
   },
   '500': {
     vars: {
-      [SpacingVar]: config.space.S500,
+      [SpacingVar]: config.space.S400,
     },
   },
 });
@@ -102,7 +102,7 @@ export const MessageBase = recipe({
     selected: SelectedVariant,
   },
   defaultVariants: {
-    space: '400',
+    space: '300',
   },
 });
 

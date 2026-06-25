@@ -15,7 +15,6 @@ import {
   domToReact,
 } from 'html-react-parser';
 import { MatrixClient } from 'matrix-js-sdk';
-import classNames from 'classnames';
 import { Box, Chip, config, Header, Icon, IconButton, Icons, Scroll, Text, toRem } from 'folds';
 import { IntermediateRepresentation, Opts as LinkifyOpts, OptFn } from 'linkifyjs';
 import Linkify from 'linkify-react';
@@ -377,7 +376,7 @@ export const getReactCustomHtmlParser = (
 
         if (name === 'p') {
           return (
-            <Text {...props} className={classNames(css.Paragraph, css.MarginSpaced)} size="Inherit">
+            <Text {...props} className={css.Paragraph} size="Inherit">
               {domToReact(children, opts)}
             </Text>
           );

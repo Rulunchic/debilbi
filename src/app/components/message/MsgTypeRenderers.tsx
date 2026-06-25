@@ -25,7 +25,7 @@ import {
   MATRIX_SPOILER_PROPERTY_NAME,
   MATRIX_SPOILER_REASON_PROPERTY_NAME,
 } from '../../../types/matrix/common';
-import { FALLBACK_MIMETYPE, getBlobSafeMimeType } from '../../utils/mimeTypes';
+import { FALLBACK_MIMETYPE, getBlobSafeMimeType, getVideoMimeType } from '../../utils/mimeTypes';
 import { parseGeoUri, scaleYDimension } from '../../utils/common';
 import { Attachment, AttachmentBox, AttachmentContent, AttachmentHeader } from './attachment';
 import { FileHeader, FileDownloadButton } from './FileHeader';
@@ -236,18 +236,18 @@ type MVideoProps = {
 export function MVideo({ content, renderAsFile, renderVideoContent, outlined }: MVideoProps) {
   const videoInfo = content?.info;
   const mxcUrl = content.file?.url ?? content.url;
-  const safeMimeType = getBlobSafeMimeType(videoInfo?.mimetype ?? '');
+  const filename = content.filename ?? content.body ?? 'Video';
+  const safeMimeType = getVideoMimeType(videoInfo?.mimetype, filename);
 
-  if (!videoInfo || !safeMimeType.startsWith('video') || typeof mxcUrl !== 'string') {
+  if (!safeMimeType.startsWith('video') || typeof mxcUrl !== 'string') {
     if (mxcUrl) {
       return renderAsFile();
     }
     return <BrokenContent />;
   }
 
-  const height = scaleYDimension(videoInfo.w || 400, 400, videoInfo.h || 400);
-
-  const filename = content.filename ?? content.body ?? 'Video';
+  const resolvedVideoInfo = videoInfo ?? ({} as IVideoInfo & IThumbnailContent);
+  const height = scaleYDimension(resolvedVideoInfo.w || 400, 400, resolvedVideoInfo.h || 400);
 
   return (
     <Attachment outlined={outlined}>
@@ -271,8 +271,8 @@ export function MVideo({ content, renderAsFile, renderVideoContent, outlined }: 
         }}
       >
         {renderVideoContent({
-          body: content.body || 'Video',
-          info: videoInfo,
+          body: content.body || filename,
+          info: resolvedVideoInfo,
           mimeType: safeMimeType,
           url: mxcUrl,
           encInfo: content.file,
