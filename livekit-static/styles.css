@@ -2,38 +2,38 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Nunito:wght@400;500;600&family=IBM+Plex+Mono:wght@400;600&display=swap&subset=cyrillic,latin');
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  /* ── Monochrome surface scale ─────────────────────────────── */
-  --background:         #f0f0ef;
-  --background-hover:   #e6e6e5;
-  --background-active:  #d9d9d8;
-  --background-line:    #ccccca;
-  --surface:            #ffffff;
-  --surface-hover:      #f7f7f6;
-  --surface-active:     #ededec;
-  --surface-line:       #e2e2e0;
-  --surface-variant:    #f0f0ef;
-  --surface-variant-hover: #e6e6e5;
-  --surface-variant-active:#d9d9d8;
-  --surface-variant-line:  #ccccca;
+  /* ── Dark surface scale ──────────────────────────────────── */
+  --background:         #0f0f0f;
+  --background-hover:   #1a1a1a;
+  --background-active:  #222222;
+  --background-line:    #2a2a2a;
+  --surface:            #1a1a1a;
+  --surface-hover:      #222222;
+  --surface-active:     #2a2a2a;
+  --surface-line:       #333333;
+  --surface-variant:    #1f1f1f;
+  --surface-variant-hover: #272727;
+  --surface-variant-active:#2f2f2f;
+  --surface-variant-line:  #3a3a3a;
 
-  /* ── Ink as primary (replaces coloured accent) ───────────── */
-  --primary:            #111111;
-  --primary-hover:      #333333;
-  --primary-container:  #e4e4e4;
+  /* ── Ink as primary ──────────────────────────────────────── */
+  --primary:            #f0f0f0;
+  --primary-hover:      #d0d0d0;
+  --primary-container:  #2a2a2a;
 
-  /* ── Semantic: use grays, no colour ─────────────────────── */
-  --success:            #1e1e1e;     /* mic-on / online */
-  --success-container:  #e4e4e4;
-  --critical:           #1a1a1a;     /* danger / mute */
-  --critical-container: #e8e8e8;
+  /* ── Semantic ────────────────────────────────────────────── */
+  --success:            #e0e0e0;
+  --success-container:  #2a2a2a;
+  --critical:           #f0f0f0;
+  --critical-container: #2a2a2a;
 
   /* ── Text ────────────────────────────────────────────────── */
-  --text:               #111111;
-  --muted:              #737373;
-  --soft-muted:         #9a9a9a;
-  --inverse:            #ffffff;
+  --text:               #f0f0f0;
+  --muted:              #969696;
+  --soft-muted:         #696969;
+  --inverse:            #111111;
 
   /* ── Media / theater ─────────────────────────────────────── */
   --screen-bg:          #080808;
