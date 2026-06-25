@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Debilbi Voice</title>
+    <link rel="stylesheet" href="/styles.css?v=20260628" />
+  </head>
+  <body class="auth-locked">
+    <section id="authGate" class="auth-gate" aria-live="polite">
+      <div class="auth-panel">
+        <div class="auth-mark">D</div>
+        <h1>Debilbi</h1>
+        <p>Войди через Telegram, чтобы зайти в голос и писать в чат.</p>
+        <div id="telegramLoginWidget" class="telegram-widget"></div>
+        <div id="botLoginBox" class="bot-login-box" hidden>
+          <code id="botLoginCode" class="bot-login-code"></code>
+          <button id="botLoginButton" class="auth-button secondary" type="button">
+            Войти через бота
+          </button>
+        </div>
+        <button id="devLoginButton" class="auth-button secondary" type="button" hidden>
+          Войти локально (dev)
+        </button>
+        <p id="authStatus" class="auth-status"></p>
+      </div>
+    </section>
+
+    <div class="client-shell cinny-silver">
+      <nav class="rail" aria-label="Spaces">
+        <div class="rail-stack">
+          <button class="rail-item active" type="button" title="Debilbi">
+            <span class="space-avatar">D</span>
+          </button>
+          <button class="rail-item" type="button" title="Lobby" data-room-jump="lobby">
+            <span class="space-avatar small">#</span>
+          </button>
+          <button class="rail-item" type="button" title="Demo" data-room-jump="demo">
+            <span class="space-avatar small">S</span>
+          </button>
+        </div>
+        <div class="rail-stack rail-bottom">
+          <span class="rail-presence" aria-hidden="true"></span>
+        </div>
+      </nav>
+
+      <aside class="rooms-pane">
+        <header class="workspace-head">
+          <div class="workspace-copy">
+            <h1>Debilbi</h1>
+            <p>voice rooms</p>
+          </div>
+          <span id="connectionState" class="server-state">offline</span>
+        </header>
+
+        <section class="room-section">
+          <div class="section-head">
+            <span>Rooms</span>
+          </div>
+          <div id="roomList" class="room-list">
+            <article class="room-item active" data-room-item="lobby">
+              <div class="room-row">
+                <button class="room-shortcut active" data-room="lobby" type="button">
+                  <span class="room-hash">#</span>
+                  <span class="room-copy">
+                    <span class="room-name">lobby</span>
+                    <span class="room-topic">Main voice chat</span>
+                  </span>
+                  <span class="room-pill" aria-hidden="true"></span>
+                </button>
+                <button class="room-chat-button" data-room-chat="lobby" type="button" title="Open text chat" aria-label="Open text chat">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1 -1.5 1.5H11l-4.5 4v-4H5a1.5 1.5 0 0 1 -1.5 -1.5v-7A1.5 1.5 0 0 1 5 5.5Z"/>
+                  </svg>
+                </button>
+                <button class="room-rename" data-room-rename="lobby" type="button" title="Rename channel">Edit</button>
+              </div>
+              <div class="room-users" data-room-users="lobby"></div>
+            </article>
+            <article class="room-item" data-room-item="ranked">
+              <div class="room-row">
+                <button class="room-shortcut" data-room="ranked" type="button">
+                  <span class="room-hash">#</span>
+                  <span class="room-copy">
+                    <span class="room-name">ranked</span>
+                    <span class="room-topic">Party voice</span>
+                  </span>
+                  <span class="room-pill" aria-hidden="true"></span>
+                </button>
+                <button class="room-chat-button" data-room-chat="ranked" type="button" title="Open text chat" aria-label="Open text chat">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1 -1.5 1.5H11l-4.5 4v-4H5a1.5 1.5 0 0 1 -1.5 -1.5v-7A1.5 1.5 0 0 1 5 5.5Z"/>
+                  </svg>
+                </button>
+                <button class="room-rename" data-room-rename="ranked" type="button" title="Rename channel">Edit</button>
+              </div>
+              <div class="room-users" data-room-users="ranked"></div>
+            </article>
+            <article class="room-item" data-room-item="demo">
+              <div class="room-row">
+                <button class="room-shortcut" data-room="demo" type="button">
+                  <span class="room-hash">#</span>
+                  <span class="room-copy">
+                    <span class="room-name">demo</span>
+                    <span class="room-topic">Screen share tests</span>
+                  </span>
+                  <span class="room-pill" aria-hidden="true"></span>
+                </button>
+                <button class="room-chat-button" data-room-chat="demo" type="button" title="Open text chat" aria-label="Open text chat">
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v7a1.5 1.5 0 0 1 -1.5 1.5H11l-4.5 4v-4H5a1.5 1.5 0 0 1 -1.5 -1.5v-7A1.5 1.5 0 0 1 5 5.5Z"/>
+                  </svg>
+                </button>
+                <button class="room-rename" data-room-rename="demo" type="button" title="Rename channel">Edit</button>
+              </div>
+              <div class="room-users" data-room-users="demo"></div>
+            </article>
+          </div>
+        </section>
+
+        <form id="joinForm" class="identity-form profile-form">
+          <input id="displayName" name="displayName" type="hidden" />
+          <div class="profile-card">
+            <img id="profilePhoto" class="profile-photo" alt="" />
+            <span id="profileFallback" class="profile-fallback">TG</span>
+            <span class="profile-copy">
+              <strong id="profileName">Telegram</strong>
+              <small id="profileHandle">@telegram</small>
+            </span>
+            <button id="logoutButton" class="profile-logout" type="button" title="Logout">Exit</button>
+          </div>
+        </form>
+      </aside>
+
+      <main class="room-pane">
+        <header class="room-header">
+          <div class="room-title">
+            <span class="room-hash">#</span>
+            <div class="room-title-copy">
+              <div class="room-title-head">
+                <h2 id="activeRoom">lobby</h2>
+              </div>
+              <p>Raw voice, chat history, screen share</p>
+            </div>
+          </div>
+          <div class="room-actions">
+            <button id="micButton" class="action-button icon-toggle" type="button" disabled title="Mic off" aria-label="Mic off">
+              <svg class="action-icon icon-off" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 9V8a3 3 0 1 1 6 0v4"/>
+                <path d="M12 14a3 3 0 0 0 3-3"/>
+                <path d="M5 11a7 7 0 0 0 10.5 6"/>
+                <path d="M12 18v3"/>
+                <path d="M4 4l16 16"/>
+              </svg>
+              <svg class="action-icon icon-on" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 14a3 3 0 0 0 3-3V8a3 3 0 1 0 -6 0v3a3 3 0 0 0 3 3Z"/>
+                <path d="M5 11a7 7 0 0 0 14 0"/>
+                <path d="M12 18v3"/>
+              </svg>
+            </button>
+            <label class="quality-control" title="Screen share quality">
+              <svg class="quality-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 7h4"/>
+                <path d="M10 7h10"/>
+                <path d="M4 12h10"/>
+                <path d="M16 12h4"/>
+                <path d="M4 17h8"/>
+                <path d="M14 17h6"/>
+                <circle cx="8" cy="7" r="1.5"/>
+                <circle cx="14" cy="12" r="1.5"/>
+                <circle cx="12" cy="17" r="1.5"/>
+              </svg>
+              <select id="screenQuality" disabled>
+                <option value="smooth720">Smooth 720p60</option>
+                <option value="smooth1080">Smooth 1080p60</option>
+                <option value="balanced1080">Balanced 1080p30</option>
+                <option value="sharp1440">Sharp 1440p30</option>
+                <option value="stable1440">Stable 1440p60</option>
+                <option value="sharp4k">Sharp 4K30</option>
+              </select>
+            </label>
+            <button id="screenToggleButton" class="action-button icon-toggle demo-toggle" type="button" title="Hide demos locally" aria-label="Hide demos locally" aria-pressed="false">
+              <svg class="action-icon icon-off" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="5" width="16" height="10" rx="2" />
+                <path d="M12 15v4" />
+                <path d="M8 19h8" />
+              </svg>
+              <svg class="action-icon icon-on" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="5" width="16" height="10" rx="2" />
+                <path d="M6 7l12 10" />
+                <path d="M12 15v4" />
+                <path d="M8 19h8" />
+              </svg>
+            </button>
+            <button id="screenButton" class="action-button icon-toggle" type="button" disabled title="Share screen" aria-label="Share screen">
+              <svg class="action-icon icon-off" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="5" width="16" height="10" rx="2" />
+                <path d="M8 19h8"/>
+                <path d="M12 15v4"/>
+                <path d="M8 9h8"/>
+              </svg>
+              <svg class="action-icon icon-on" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="5" width="16" height="10" rx="2" />
+                <path d="M12 15v4"/>
+                <path d="M8 19h8"/>
+                <path d="M10 9h4"/>
+                <path d="M12 7v4"/>
+              </svg>
+            </button>
+            <button id="fitButton" class="action-button icon-toggle fit-toggle" type="button" disabled title="Contain screen" aria-label="Contain screen">
+              <svg class="action-icon icon-contain" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 4H5a1 1 0 0 0 -1 1v3"/>
+                <path d="M16 4h3a1 1 0 0 1 1 1v3"/>
+                <path d="M8 20H5a1 1 0 0 1 -1 -1v-3"/>
+                <path d="M16 20h3a1 1 0 0 0 1 -1v-3"/>
+                <path d="M9 9h6v6H9z"/>
+              </svg>
+              <svg class="action-icon icon-fill" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 4h3"/>
+                <path d="M4 5v3"/>
+                <path d="M19 4h-3"/>
+                <path d="M20 5v3"/>
+                <path d="M5 20h3"/>
+                <path d="M4 19v-3"/>
+                <path d="M19 20h-3"/>
+                <path d="M20 19v-3"/>
+                <rect x="9" y="9" width="6" height="6" rx="1.5"/>
+              </svg>
+            </button>
+            <button id="theaterButton" class="action-button" type="button" disabled title="Expand screen" aria-label="Expand screen">
+              <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 4H5a1 1 0 0 0 -1 1v3"/>
+                <path d="M16 4h3a1 1 0 0 1 1 1v3"/>
+                <path d="M8 20H5a1 1 0 0 1 -1 -1v-3"/>
+                <path d="M16 20h3a1 1 0 0 0 1 -1v-3"/>
+              </svg>
+            </button>
+            <button id="leaveButton" class="action-button danger" type="button" disabled title="Leave room" aria-label="Leave room">
+              <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 17l5-5-5-5"/>
+                <path d="M15 12H4"/>
+                <path d="M20 4v16"/>
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <section id="screenStage" class="screen-stage is-hidden" aria-live="polite">
+          <div id="screenFocus" class="screen-focus"></div>
+          <div id="screenStrip" class="screen-strip" aria-label="Shared screens"></div>
+        </section>
+
+        <section class="timeline">
+          <div id="voiceStrip" class="voice-strip" aria-label="Voice participants"></div>
+          <div id="chatLog" class="messages" aria-live="polite"></div>
+        </section>
+
+        <div class="composer-area">
+          <div id="attachmentTray" class="attachment-tray" hidden></div>
+          <form id="chatForm" class="composer">
+            <button id="fileButton" class="composer-tool" type="button" disabled title="Attach files">+</button>
+            <input id="fileInput" type="file" multiple hidden />
+            <textarea id="chatInput" maxlength="2000" autocomplete="off" placeholder="Send a message..." rows="1" disabled></textarea>
+            <button id="chatSend" type="submit" disabled>Send</button>
+          </form>
+        </div>
+      </main>
+
+      <aside class="people-pane">
+        <header class="people-head">
+          <h2>People</h2>
+        </header>
+        <section class="status-panel">
+          <span class="status-label">Capture</span>
+          <strong id="captureMode">raw mic</strong>
+        </section>
+        <div id="peopleList" class="people-list"></div>
+      </aside>
+    </div>
+
+    <div id="theater" class="theater" aria-hidden="true">
+      <div class="theater-topbar">
+        <strong id="theaterTitle">Screen share</strong>
+        <div>
+          <button id="fullscreenButton" class="action-button icon-toggle theater-fullscreen-button" type="button" title="Enter fullscreen" aria-label="Enter fullscreen">
+            <svg class="action-icon icon-off" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 4H5a1 1 0 0 0 -1 1v3"/>
+              <path d="M16 4h3a1 1 0 0 1 1 1v3"/>
+              <path d="M8 20H5a1 1 0 0 1 -1 -1v-3"/>
+              <path d="M16 20h3a1 1 0 0 0 1 -1v-3"/>
+            </svg>
+            <svg class="action-icon icon-on" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M10 4H5a1 1 0 0 0 -1 1v5"/>
+              <path d="M14 4h5a1 1 0 0 1 1 1v5"/>
+              <path d="M10 20H5a1 1 0 0 1 -1 -1v-5"/>
+              <path d="M14 20h5a1 1 0 0 0 1 -1v-5"/>
+              <path d="M9 9l-5 5"/>
+              <path d="M15 9l5 5"/>
+              <path d="M9 15l-5-5"/>
+              <path d="M15 15l5-5"/>
+            </svg>
+          </button>
+          <button id="closeTheaterButton" class="action-button danger" type="button" title="Close demo" aria-label="Close demo">
+            <svg class="action-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 6l12 12"/>
+              <path d="M18 6L6 18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div id="theaterMedia" class="theater-media"></div>
+    </div>
+
+    <div id="audioSink" class="audio-sink" aria-hidden="true"></div>
+
+    <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true">
+      <button class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
+      <div id="lightboxInner" class="lightbox-inner">
+        <img id="lightboxImg" class="lightbox-img" alt="" hidden />
+        <video id="lightboxVideo" class="lightbox-video" controls playsinline hidden></video>
+      </div>
+      <span class="lightbox-zoom-hint">Scroll to zoom · Click outside to close</span>
+    </div>
+
+    <script type="module" src="/app.js?v=20260628"></script>
+  </body>
+</html>
