@@ -1653,8 +1653,7 @@ export function RoomTimeline({ room, eventId, roomInputRef, editor }: RoomTimeli
       (!newDivider || eventSender === mx.getUserId()) &&
       prevEvent !== undefined &&
       prevEvent.getSender() === eventSender &&
-      prevEvent.getType() === mEvent.getType() &&
-      minuteDifference(prevEvent.getTs(), mEvent.getTs()) < 2;
+      minuteDifference(prevEvent.getTs(), mEvent.getTs()) < 1;
 
     const eventJSX = reactionOrEditEvent(mEvent)
       ? null

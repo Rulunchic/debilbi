@@ -220,16 +220,18 @@ export const VideoContent = as<'div', VideoContentProps>(
             </TooltipProvider>
           </Box>
         )}
-        {!load && typeof info.size === 'number' && (
+        {typeof info.size === 'number' && (
           <Box
             className={css.AbsoluteFooter}
             justifyContent="SpaceBetween"
             alignContent="Center"
             gap="200"
           >
-            <Badge variant="Secondary" fill="Soft">
-              <Text size="L400">{millisecondsToMinutesAndSeconds(info.duration ?? 0)}</Text>
-            </Badge>
+            {typeof info.duration === 'number' && info.duration > 0 && !load && (
+              <Badge variant="Secondary" fill="Soft">
+                <Text size="L400">{millisecondsToMinutesAndSeconds(info.duration)}</Text>
+              </Badge>
+            )}
             <Badge variant="Secondary" fill="Soft">
               <Text size="L400">{bytesToSize(info.size)}</Text>
             </Badge>
