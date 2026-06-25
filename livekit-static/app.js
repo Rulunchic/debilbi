@@ -3,7 +3,7 @@ import {
   Room,
   RoomEvent,
   Track,
-} from "https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.esm.mjs";
+} from 'https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.esm.mjs';
 
 const rawAudioOptions = {
   echoCancellation: false,
@@ -14,94 +14,103 @@ const rawAudioOptions = {
 
 const screenQualityPresets = {
   smooth720: {
-    label: "Smooth 720p60",
+    label: 'Smooth 720p60',
     width: 1280,
     height: 720,
     fps: 60,
     bitrate: 4_500_000,
-    contentHint: "motion",
-    degradationPreference: "maintain-framerate",
+    contentHint: 'motion',
+    degradationPreference: 'maintain-framerate',
   },
   smooth1080: {
-    label: "Smooth 1080p60",
+    label: 'Smooth 1080p60',
     width: 1920,
     height: 1080,
     fps: 60,
     bitrate: 8_500_000,
-    contentHint: "motion",
-    degradationPreference: "maintain-framerate",
+    contentHint: 'motion',
+    degradationPreference: 'maintain-framerate',
   },
   balanced1080: {
-    label: "Balanced 1080p30",
+    label: 'Balanced 1080p30',
     width: 1920,
     height: 1080,
     fps: 30,
     bitrate: 6_000_000,
-    contentHint: "detail",
-    degradationPreference: "balanced",
+    contentHint: 'detail',
+    degradationPreference: 'balanced',
   },
   sharp1440: {
-    label: "Sharp 1440p30",
+    label: 'Sharp 1440p30',
     width: 2560,
     height: 1440,
     fps: 30,
     bitrate: 10_000_000,
-    contentHint: "detail",
-    degradationPreference: "balanced",
+    contentHint: 'detail',
+    degradationPreference: 'balanced',
   },
   stable1440: {
-    label: "Stable 1440p60",
+    label: 'Stable 1440p60',
     width: 2560,
     height: 1440,
     fps: 60,
     bitrate: 24_000_000,
-    contentHint: "motion",
-    degradationPreference: "maintain-framerate",
-    codec: "vp9",
+    contentHint: 'motion',
+    degradationPreference: 'maintain-framerate',
+    codec: 'vp9',
     simulcast: false,
   },
   sharp4k: {
-    label: "Sharp 4K30",
+    label: 'Sharp 4K30',
     width: 3840,
     height: 2160,
     fps: 30,
     bitrate: 14_000_000,
-    contentHint: "detail",
-    degradationPreference: "maintain-resolution",
+    contentHint: 'detail',
+    degradationPreference: 'maintain-resolution',
   },
 };
 
 const legacyScreenQualityMap = {
-  "720p30": "smooth720",
-  "1080p30": "balanced1080",
-  "1080p60": "smooth1080",
-  "1440p60": "stable1440",
-  "4k30": "sharp4k",
+  '720p30': 'smooth720',
+  '1080p30': 'balanced1080',
+  '1080p60': 'smooth1080',
+  '1440p60': 'stable1440',
+  '4k30': 'sharp4k',
 };
 
 const maxUploadBytes = 100 * 1024 * 1024;
-const audioAttachmentExtensions = new Set(["mp3", "wav", "ogg", "oga", "m4a", "aac", "flac", "opus"]);
-const videoAttachmentExtensions = new Set(["mp4", "webm", "mov", "m4v", "ogv", "mkv"]);
+const audioAttachmentExtensions = new Set([
+  'mp3',
+  'wav',
+  'ogg',
+  'oga',
+  'm4a',
+  'aac',
+  'flac',
+  'opus',
+]);
+const videoAttachmentExtensions = new Set(['mp4', 'webm', 'mov', 'm4v', 'ogv', 'mkv']);
 
 const state = {
   room: null,
-  identity: "",
-  name: "",
+  identity: '',
+  name: '',
   user: null,
-  session: localStorage.getItem("debilbi:session") || "",
+  session: localStorage.getItem('debilbi:session') || '',
   authConfig: null,
-  currentRoom: "lobby",
-  chatRoom: "lobby",
+  currentRoom: 'lobby',
+  chatRoom: 'lobby',
   isJoining: false,
   presenceTimer: 0,
   botLoginTimer: 0,
-  botLoginCommand: "",
+  botLoginCommand: '',
   chatRoomExplicit: false,
   presenceByRoom: {},
-  focusedScreenId: "",
-  screenFit: "contain",
-  screenQuality: localStorage.getItem("debilbi:screenQuality") || "1080p30",
-  screenDisabledLocal: localStorage.getItem("debilbi:screenDisabledLocal") === "1",
+  focusedScreenId: '',
+  screenFit: 'contain',
+  screenQuality: localStorage.getItem('debilbi:screenQuality') || '1080p30',
+  screenDisabledLocal: localStorage.getItem('debilbi:screenDisabledLocal') === '1',
   theaterOpen: false,
   activeSpeakerIds: new Set(),
   messageIds: new Set(),
@@ -111,143 +120,143 @@ const state = {
   audioPrefs: loadAudioPrefs(),
   seenUsers: new Map(),
   channels: [
-    { id: "lobby", name: "lobby", topic: "Main voice chat" },
-    { id: "ranked", name: "ranked", topic: "Party voice" },
-    { id: "demo", name: "demo", topic: "Screen share tests" },
+    { id: 'lobby', name: 'lobby', topic: 'Main voice chat' },
+    { id: 'ranked', name: 'ranked', topic: 'Party voice' },
+    { id: 'demo', name: 'demo', topic: 'Screen share tests' },
   ],
 };
 
 const PRESENCE_POLL_INTERVAL_MS = 1200;
 
 const els = {
-  authGate: document.querySelector("#authGate"),
-  telegramLoginWidget: document.querySelector("#telegramLoginWidget"),
-  botLoginButton: document.querySelector("#botLoginButton"),
-  botLoginBox: document.querySelector("#botLoginBox"),
-  botLoginCode: document.querySelector("#botLoginCode"),
-  devLoginButton: document.querySelector("#devLoginButton"),
-  authStatus: document.querySelector("#authStatus"),
-  joinForm: document.querySelector("#joinForm"),
-  displayName: document.querySelector("#displayName"),
-  profilePhoto: document.querySelector("#profilePhoto"),
-  profileFallback: document.querySelector("#profileFallback"),
-  profileName: document.querySelector("#profileName"),
-  profileHandle: document.querySelector("#profileHandle"),
-  logoutButton: document.querySelector("#logoutButton"),
-  activeRoom: document.querySelector("#activeRoom"),
-  connectionState: document.querySelector("#connectionState"),
-  participantCount: document.querySelector("#participantCount"),
-  captureMode: document.querySelector("#captureMode"),
-  screenStage: document.querySelector("#screenStage"),
-  screenFocus: document.querySelector("#screenFocus"),
-  screenStrip: document.querySelector("#screenStrip"),
-  voiceStrip: document.querySelector("#voiceStrip"),
-  peopleList: document.querySelector("#peopleList"),
-  audioSink: document.querySelector("#audioSink"),
-  micButton: document.querySelector("#micButton"),
-  screenQuality: document.querySelector("#screenQuality"),
-  screenToggleButton: document.querySelector("#screenToggleButton"),
-  screenButton: document.querySelector("#screenButton"),
-  fitButton: document.querySelector("#fitButton"),
-  theaterButton: document.querySelector("#theaterButton"),
-  leaveButton: document.querySelector("#leaveButton"),
-  chatRoomLabel: document.querySelector("#chatRoomLabel"),
-  chatForm: document.querySelector("#chatForm"),
-  chatInput: document.querySelector("#chatInput"),
-  chatSend: document.querySelector("#chatSend"),
-  chatLog: document.querySelector("#chatLog"),
-  fileButton: document.querySelector("#fileButton"),
-  fileInput: document.querySelector("#fileInput"),
-  attachmentTray: document.querySelector("#attachmentTray"),
-  roomShortcuts: document.querySelectorAll(".room-shortcut"),
-  roomItems: document.querySelectorAll("[data-room-item]"),
-  roomChatButtons: document.querySelectorAll("[data-room-chat]"),
-  roomRenameButtons: document.querySelectorAll("[data-room-rename]"),
-  roomUserLists: document.querySelectorAll("[data-room-users]"),
-  railRoomJumps: document.querySelectorAll("[data-room-jump]"),
-  theater: document.querySelector("#theater"),
-  theaterTitle: document.querySelector("#theaterTitle"),
-  theaterMedia: document.querySelector("#theaterMedia"),
-  fullscreenButton: document.querySelector("#fullscreenButton"),
-  closeTheaterButton: document.querySelector("#closeTheaterButton"),
-  lightbox: document.querySelector("#lightbox"),
-  lightboxInner: document.querySelector("#lightboxInner"),
-  lightboxImg: document.querySelector("#lightboxImg"),
-  lightboxVideo: document.querySelector("#lightboxVideo"),
-  lightboxClose: document.querySelector("#lightboxClose"),
+  authGate: document.querySelector('#authGate'),
+  telegramLoginWidget: document.querySelector('#telegramLoginWidget'),
+  botLoginButton: document.querySelector('#botLoginButton'),
+  botLoginBox: document.querySelector('#botLoginBox'),
+  botLoginCode: document.querySelector('#botLoginCode'),
+  devLoginButton: document.querySelector('#devLoginButton'),
+  authStatus: document.querySelector('#authStatus'),
+  joinForm: document.querySelector('#joinForm'),
+  displayName: document.querySelector('#displayName'),
+  profilePhoto: document.querySelector('#profilePhoto'),
+  profileFallback: document.querySelector('#profileFallback'),
+  profileName: document.querySelector('#profileName'),
+  profileHandle: document.querySelector('#profileHandle'),
+  logoutButton: document.querySelector('#logoutButton'),
+  activeRoom: document.querySelector('#activeRoom'),
+  connectionState: document.querySelector('#connectionState'),
+  participantCount: document.querySelector('#participantCount'),
+  captureMode: document.querySelector('#captureMode'),
+  screenStage: document.querySelector('#screenStage'),
+  screenFocus: document.querySelector('#screenFocus'),
+  screenStrip: document.querySelector('#screenStrip'),
+  voiceStrip: document.querySelector('#voiceStrip'),
+  peopleList: document.querySelector('#peopleList'),
+  audioSink: document.querySelector('#audioSink'),
+  micButton: document.querySelector('#micButton'),
+  screenQuality: document.querySelector('#screenQuality'),
+  screenToggleButton: document.querySelector('#screenToggleButton'),
+  screenButton: document.querySelector('#screenButton'),
+  fitButton: document.querySelector('#fitButton'),
+  theaterButton: document.querySelector('#theaterButton'),
+  leaveButton: document.querySelector('#leaveButton'),
+  chatRoomLabel: document.querySelector('#chatRoomLabel'),
+  chatForm: document.querySelector('#chatForm'),
+  chatInput: document.querySelector('#chatInput'),
+  chatSend: document.querySelector('#chatSend'),
+  chatLog: document.querySelector('#chatLog'),
+  fileButton: document.querySelector('#fileButton'),
+  fileInput: document.querySelector('#fileInput'),
+  attachmentTray: document.querySelector('#attachmentTray'),
+  roomShortcuts: document.querySelectorAll('.room-shortcut'),
+  roomItems: document.querySelectorAll('[data-room-item]'),
+  roomChatButtons: document.querySelectorAll('[data-room-chat]'),
+  roomRenameButtons: document.querySelectorAll('[data-room-rename]'),
+  roomUserLists: document.querySelectorAll('[data-room-users]'),
+  railRoomJumps: document.querySelectorAll('[data-room-jump]'),
+  theater: document.querySelector('#theater'),
+  theaterTitle: document.querySelector('#theaterTitle'),
+  theaterMedia: document.querySelector('#theaterMedia'),
+  fullscreenButton: document.querySelector('#fullscreenButton'),
+  closeTheaterButton: document.querySelector('#closeTheaterButton'),
+  lightbox: document.querySelector('#lightbox'),
+  lightboxInner: document.querySelector('#lightboxInner'),
+  lightboxImg: document.querySelector('#lightboxImg'),
+  lightboxVideo: document.querySelector('#lightboxVideo'),
+  lightboxClose: document.querySelector('#lightboxClose'),
 };
 
 const decoder = new TextDecoder();
 const encoder = new TextEncoder();
 
 state.screenQuality = normalizeScreenQuality(state.screenQuality);
-localStorage.setItem("debilbi:screenQuality", state.screenQuality);
+localStorage.setItem('debilbi:screenQuality', state.screenQuality);
 
 renderEmptyState();
 void bootAuth();
 
 els.roomShortcuts.forEach((button) => {
-  button.addEventListener("click", () => selectAndJoinRoom(button.dataset.room));
+  button.addEventListener('click', () => selectAndJoinRoom(button.dataset.room));
 });
 
 els.roomRenameButtons.forEach((button) => {
-  button.addEventListener("click", (event) => {
+  button.addEventListener('click', (event) => {
     event.stopPropagation();
     void renameChannel(button.dataset.roomRename);
   });
 });
 
 els.roomChatButtons.forEach((button) => {
-  button.addEventListener("click", (event) => {
+  button.addEventListener('click', (event) => {
     event.stopPropagation();
     void openTextChat(button.dataset.roomChat);
   });
 });
 
 els.railRoomJumps.forEach((button) => {
-  button.addEventListener("click", () => selectAndJoinRoom(button.dataset.roomJump));
+  button.addEventListener('click', () => selectAndJoinRoom(button.dataset.roomJump));
 });
 
-els.joinForm.addEventListener("submit", async (event) => {
+els.joinForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   await selectAndJoinRoom(state.currentRoom);
 });
 
-els.logoutButton.addEventListener("click", () => {
+els.logoutButton.addEventListener('click', () => {
   logout();
 });
 
-els.botLoginButton?.addEventListener("click", () => {
+els.botLoginButton?.addEventListener('click', () => {
   void startBotLogin();
 });
 
-els.devLoginButton?.addEventListener("click", () => {
+els.devLoginButton?.addEventListener('click', () => {
   void devLogin();
 });
 
-els.chatInput.addEventListener("keydown", (event) => {
-  if (event.key === "Enter" && !event.shiftKey) {
+els.chatInput.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' && !event.shiftKey) {
     event.preventDefault();
     els.chatForm.requestSubmit();
   }
 });
 
-els.chatInput.addEventListener("input", () => {
-  els.chatInput.style.height = "auto";
-  els.chatInput.style.height = Math.min(els.chatInput.scrollHeight, 120) + "px";
+els.chatInput.addEventListener('input', () => {
+  els.chatInput.style.height = 'auto';
+  els.chatInput.style.height = Math.min(els.chatInput.scrollHeight, 120) + 'px';
 });
 
-els.fileButton.addEventListener("click", () => {
+els.fileButton.addEventListener('click', () => {
   els.fileInput.click();
 });
 
-els.fileInput.addEventListener("change", () => {
+els.fileInput.addEventListener('change', () => {
   const files = Array.from(els.fileInput.files || []);
   addPendingFiles(files);
-  els.fileInput.value = "";
+  els.fileInput.value = '';
 });
 
-document.addEventListener("paste", (event) => {
+document.addEventListener('paste', (event) => {
   if (!state.user) return;
   const files = getClipboardFiles(event.clipboardData);
   if (!files.length) return;
@@ -256,13 +265,13 @@ document.addEventListener("paste", (event) => {
   els.chatInput.focus();
 });
 
-els.leaveButton.addEventListener("click", () => {
+els.leaveButton.addEventListener('click', () => {
   if (state.room) {
     state.room.disconnect();
   }
 });
 
-els.micButton.addEventListener("click", async () => {
+els.micButton.addEventListener('click', async () => {
   if (!isConnected()) return;
   const enabled = hasLocalMic();
   try {
@@ -274,7 +283,7 @@ els.micButton.addEventListener("click", async () => {
   }
 });
 
-els.screenButton.addEventListener("click", async () => {
+els.screenButton.addEventListener('click', async () => {
   if (!isConnected()) return;
   try {
     await setScreenShare(!hasLocalScreen());
@@ -284,20 +293,22 @@ els.screenButton.addEventListener("click", async () => {
   }
 });
 
-els.screenToggleButton?.addEventListener("click", () => {
+els.screenToggleButton?.addEventListener('click', () => {
   setLocalDemoDisabled(!state.screenDisabledLocal);
 });
 
 els.screenQuality.value = normalizeScreenQuality(state.screenQuality);
 state.screenQuality = els.screenQuality.value;
 
-els.screenQuality.addEventListener("change", async () => {
+els.screenQuality.addEventListener('change', async () => {
   const nextQuality = normalizeScreenQuality(els.screenQuality.value);
   state.screenQuality = nextQuality;
-  localStorage.setItem("debilbi:screenQuality", nextQuality);
+  localStorage.setItem('debilbi:screenQuality', nextQuality);
   updateControls();
   if (isConnected() && hasLocalScreen()) {
-    addSystemNotice(`screen quality changed to ${screenQualityPresets[nextQuality].label}; restarting share`);
+    addSystemNotice(
+      `screen quality changed to ${screenQualityPresets[nextQuality].label}; restarting share`
+    );
     try {
       await restartScreenShare();
     } catch (error) {
@@ -307,20 +318,20 @@ els.screenQuality.addEventListener("change", async () => {
   }
 });
 
-els.fitButton.addEventListener("click", () => {
-  state.screenFit = state.screenFit === "contain" ? "cover" : "contain";
+els.fitButton.addEventListener('click', () => {
+  state.screenFit = state.screenFit === 'contain' ? 'cover' : 'contain';
   renderRoom();
 });
 
-els.theaterButton.addEventListener("click", () => {
+els.theaterButton.addEventListener('click', () => {
   openTheater();
 });
 
-els.closeTheaterButton.addEventListener("click", () => {
+els.closeTheaterButton.addEventListener('click', () => {
   void closeTheater();
 });
 
-els.fullscreenButton.addEventListener("click", async () => {
+els.fullscreenButton.addEventListener('click', async () => {
   if (!document.fullscreenElement) {
     await els.theater.requestFullscreen?.();
   } else {
@@ -328,30 +339,34 @@ els.fullscreenButton.addEventListener("click", async () => {
   }
 });
 
-els.theaterMedia.addEventListener("dblclick", () => {
+els.theaterMedia.addEventListener('dblclick', () => {
   void closeTheater();
 });
 
-document.addEventListener("fullscreenchange", syncTheaterControls);
+document.addEventListener('fullscreenchange', syncTheaterControls);
 
 // Lightbox
-els.lightbox?.addEventListener("click", (e) => {
+els.lightbox?.addEventListener('click', (e) => {
   if (e.target === els.lightbox || e.target === els.lightboxInner) closeLightbox();
 });
-els.lightboxClose?.addEventListener("click", closeLightbox);
-els.lightboxVideo?.addEventListener("click", toggleLightboxVideo);
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && els.lightbox && !els.lightbox.hidden) closeLightbox();
+els.lightboxClose?.addEventListener('click', closeLightbox);
+els.lightboxVideo?.addEventListener('click', toggleLightboxVideo);
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && els.lightbox && !els.lightbox.hidden) closeLightbox();
 });
-els.lightbox?.addEventListener("wheel", (e) => {
-  if (els.lightbox.hidden) return;
-  if (els.lightboxVideo && !els.lightboxVideo.hidden) return; // don't zoom video
-  e.preventDefault();
-  _lbZoom = Math.max(_LB_ZOOM_MIN, Math.min(_LB_ZOOM_MAX, _lbZoom * (e.deltaY < 0 ? 1.12 : 0.9)));
-  if (els.lightboxInner) els.lightboxInner.style.transform = `scale(${_lbZoom})`;
-}, { passive: false });
+els.lightbox?.addEventListener(
+  'wheel',
+  (e) => {
+    if (els.lightbox.hidden) return;
+    if (els.lightboxVideo && !els.lightboxVideo.hidden) return; // don't zoom video
+    e.preventDefault();
+    _lbZoom = Math.max(_LB_ZOOM_MIN, Math.min(_LB_ZOOM_MAX, _lbZoom * (e.deltaY < 0 ? 1.12 : 0.9)));
+    if (els.lightboxInner) els.lightboxInner.style.transform = `scale(${_lbZoom})`;
+  },
+  { passive: false }
+);
 
-els.chatForm.addEventListener("submit", async (event) => {
+els.chatForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   if (!state.user) return;
   const body = els.chatInput.value.trim();
@@ -361,16 +376,16 @@ els.chatForm.addEventListener("submit", async (event) => {
   try {
     const attachments = files.length ? await uploadFiles(files) : [];
     const message = await saveMessage(body, attachments);
-    els.chatInput.value = "";
-    els.chatInput.style.height = "";
+    els.chatInput.value = '';
+    els.chatInput.style.height = '';
     state.pendingFiles = [];
     renderAttachmentTray();
     addMessage(message, true);
     if (isConnected()) {
-      const payload = encoder.encode(JSON.stringify({ type: "chat", message }));
+      const payload = encoder.encode(JSON.stringify({ type: 'chat', message }));
       await state.room.localParticipant.publishData(payload, {
         reliable: true,
-        topic: "chat",
+        topic: 'chat',
       });
     }
   } catch (error) {
@@ -386,7 +401,7 @@ els.chatForm.addEventListener("submit", async (event) => {
 
 async function bootAuth() {
   try {
-    const configResponse = await fetch("/api/config");
+    const configResponse = await fetch('/api/config');
     state.authConfig = configResponse.ok ? await configResponse.json() : {};
   } catch (error) {
     console.warn(error);
@@ -397,23 +412,23 @@ async function bootAuth() {
     void completeTelegramWidgetAuth(user);
   };
   renderTelegramWidget();
-  let authError = localStorage.getItem("debilbi:authError");
-  if (authError) localStorage.removeItem("debilbi:authError");
+  let authError = localStorage.getItem('debilbi:authError');
+  if (authError) localStorage.removeItem('debilbi:authError');
   const authMessage = authError
     ? `Telegram login failed: ${authError}`
-    : "Войди через Telegram, чтобы продолжить.";
+    : 'Войди через Telegram, чтобы продолжить.';
 
   if (state.session) {
     try {
-      const response = await fetch("/api/me", { headers: authHeaders() });
-      if (!response.ok) throw new Error("session expired");
+      const response = await fetch('/api/me', { headers: authHeaders() });
+      if (!response.ok) throw new Error('session expired');
       const data = await response.json();
       setAuthenticated(data.user, state.session);
       return;
     } catch (error) {
       console.warn(error);
-      localStorage.removeItem("debilbi:session");
-      state.session = "";
+      localStorage.removeItem('debilbi:session');
+      state.session = '';
     }
   }
   showAuthGate(authMessage);
@@ -429,32 +444,35 @@ function renderTelegramWidget() {
   els.telegramLoginWidget.replaceChildren();
   els.telegramLoginWidget.hidden = !widgetEnabled;
   if (!botUsername || !widgetEnabled) return;
-  const script = document.createElement("script");
+  const script = document.createElement('script');
   script.async = true;
-  script.src = "https://telegram.org/js/telegram-widget.js?22";
-  script.setAttribute("data-telegram-login", botUsername);
-  script.setAttribute("data-size", "large");
-  script.setAttribute("data-radius", "8");
-  script.setAttribute("data-request-access", "write");
-  script.setAttribute("data-auth-url", new URL(state.authConfig?.telegramAuthUrl || "/auth/telegram", location.origin).href);
+  script.src = 'https://telegram.org/js/telegram-widget.js?22';
+  script.setAttribute('data-telegram-login', botUsername);
+  script.setAttribute('data-size', 'large');
+  script.setAttribute('data-radius', '8');
+  script.setAttribute('data-request-access', 'write');
+  script.setAttribute(
+    'data-auth-url',
+    new URL(state.authConfig?.telegramAuthUrl || '/auth/telegram', location.origin).href
+  );
   script.onerror = () => {
     if (els.botLoginBox) els.botLoginBox.hidden = false;
-    setAuthStatus("Telegram widget не загрузился — войди через бота ниже.");
+    setAuthStatus('Telegram widget не загрузился — войди через бота ниже.');
   };
   els.telegramLoginWidget.appendChild(script);
 }
 
 async function completeTelegramWidgetAuth(user) {
-  setAuthStatus("Проверяю Telegram...");
+  setAuthStatus('Проверяю Telegram...');
   try {
-    const response = await fetch("/api/auth/telegram", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('/api/auth/telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(user),
     });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new Error(data.error || "telegram auth failed");
+      throw new Error(data.error || 'telegram auth failed');
     }
     const data = await response.json();
     setAuthenticated(data.user, data.session);
@@ -467,14 +485,14 @@ async function completeTelegramWidgetAuth(user) {
 async function devLogin() {
   if (!els.devLoginButton) return;
   els.devLoginButton.disabled = true;
-  setAuthStatus("Локальный вход...");
+  setAuthStatus('Локальный вход...');
   try {
-    const response = await fetch("/api/auth/dev", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: "Local Dev" }),
+    const response = await fetch('/api/auth/dev', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Local Dev' }),
     });
-    if (!response.ok) throw new Error("dev login unavailable");
+    if (!response.ok) throw new Error('dev login unavailable');
     const data = await response.json();
     setAuthenticated(data.user, data.session);
   } catch (error) {
@@ -488,12 +506,12 @@ async function startBotLogin() {
   if (!els.botLoginButton) return;
   clearInterval(state.botLoginTimer);
   els.botLoginButton.disabled = true;
-  setAuthStatus("Создаю код для бота...");
+  setAuthStatus('Создаю код для бота...');
   try {
-    const response = await fetch("/api/auth/bot/start", { method: "POST" });
+    const response = await fetch('/api/auth/bot/start', { method: 'POST' });
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new Error(data.error || "bot login unavailable");
+      throw new Error(data.error || 'bot login unavailable');
     }
     const data = await response.json();
     if (els.botLoginBox) {
@@ -501,11 +519,13 @@ async function startBotLogin() {
       state.botLoginCommand = data.command || `/start ${data.code}`;
       els.botLoginCode.textContent = state.botLoginCommand;
     }
-    const opened = window.open(data.startUrl, "_blank", "noopener,noreferrer");
+    const opened = window.open(data.startUrl, '_blank', 'noopener,noreferrer');
     if (!opened && data.fallbackUrl) {
-      window.open(data.fallbackUrl, "_blank", "noopener,noreferrer");
+      window.open(data.fallbackUrl, '_blank', 'noopener,noreferrer');
     }
-    setAuthStatus("Команда для входа готова ниже. Если Telegram не открылся, скопируй её и отправь боту.");
+    setAuthStatus(
+      'Команда для входа готова ниже. Если Telegram не открылся, скопируй её и отправь боту.'
+    );
     state.botLoginTimer = window.setInterval(() => {
       void checkBotLogin(data.code);
     }, 2000);
@@ -520,16 +540,16 @@ async function startBotLogin() {
 async function checkBotLogin(code) {
   try {
     const response = await fetch(`/api/auth/bot/check?code=${encodeURIComponent(code)}`);
-    if (!response.ok) throw new Error("bot check failed");
+    if (!response.ok) throw new Error('bot check failed');
     const data = await response.json();
-    if (data.status === "ok") {
+    if (data.status === 'ok') {
       clearInterval(state.botLoginTimer);
       els.botLoginButton.disabled = false;
       setAuthenticated(data.user, data.session);
-    } else if (data.status === "expired") {
+    } else if (data.status === 'expired') {
       clearInterval(state.botLoginTimer);
       els.botLoginButton.disabled = false;
-      setAuthStatus("Код истёк, нажми вход через бота ещё раз.");
+      setAuthStatus('Код истёк, нажми вход через бота ещё раз.');
     }
   } catch (error) {
     console.warn(error);
@@ -541,12 +561,12 @@ function setAuthenticated(user, session) {
   state.session = session;
   state.name = user.name;
   state.identity = user.identity;
-  state.botLoginCommand = "";
+  state.botLoginCommand = '';
   state.chatRoomExplicit = false;
-  localStorage.setItem("debilbi:session", session);
+  localStorage.setItem('debilbi:session', session);
   renderProfile();
   updateControls();
-  document.body.classList.remove("auth-locked");
+  document.body.classList.remove('auth-locked');
   void initializeApp();
 }
 
@@ -559,7 +579,7 @@ async function initializeApp() {
 }
 
 function showAuthGate(message) {
-  document.body.classList.add("auth-locked");
+  document.body.classList.add('auth-locked');
   setAuthStatus(message);
 }
 
@@ -576,14 +596,14 @@ function renderProfile() {
   els.profileFallback.textContent = initials(user.name);
   const profilePhotoUrl = user.photo_url || telegramAvatarUrl(user.username);
   recordAvatar(user.identity, profilePhotoUrl, user.username);
-  els.profilePhoto.referrerPolicy = "no-referrer";
+  els.profilePhoto.referrerPolicy = 'no-referrer';
   els.profilePhoto.onerror = () => {
-    els.profilePhoto.removeAttribute("src");
+    els.profilePhoto.removeAttribute('src');
   };
   if (profilePhotoUrl) {
     els.profilePhoto.src = profilePhotoUrl;
   } else {
-    els.profilePhoto.removeAttribute("src");
+    els.profilePhoto.removeAttribute('src');
   }
   refreshChatAvatars(user.identity);
 }
@@ -595,30 +615,30 @@ function logout() {
   void clearPresence();
   clearInterval(state.presenceTimer);
   clearInterval(state.botLoginTimer);
-  state.botLoginCommand = "";
+  state.botLoginCommand = '';
   if (els.botLoginBox) els.botLoginBox.hidden = true;
   if (els.botLoginButton) els.botLoginButton.disabled = false;
   state.chatRoomExplicit = false;
   state.user = null;
-  state.session = "";
-  state.identity = "";
-  state.name = "";
+  state.session = '';
+  state.identity = '';
+  state.name = '';
   state.presenceByRoom = {};
-  state.currentRoom = "lobby";
-  state.chatRoom = "lobby";
+  state.currentRoom = 'lobby';
+  state.chatRoom = 'lobby';
   state.chatMessagesById.clear();
   state.avatarByIdentity = Object.create(null);
   state.seenUsers.clear();
-  localStorage.removeItem("debilbi:session");
+  localStorage.removeItem('debilbi:session');
   resetRoom();
-  syncChatRoomButtons("lobby");
+  syncChatRoomButtons('lobby');
   renderRoomListPresence([]);
-  showAuthGate("Ты вышел. Войди через Telegram снова.");
+  showAuthGate('Ты вышел. Войди через Telegram снова.');
 }
 
 async function joinRoom(roomName = state.currentRoom) {
   if (!state.user) {
-    showAuthGate("Сначала войди через Telegram.");
+    showAuthGate('Сначала войди через Telegram.');
     return;
   }
   if (state.room) {
@@ -630,13 +650,13 @@ async function joinRoom(roomName = state.currentRoom) {
   clearMessages();
 
   try {
-    const tokenResponse = await fetch("/api/token", {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ room: roomName || "lobby" }),
+    const tokenResponse = await fetch('/api/token', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ room: roomName || 'lobby' }),
     });
     if (!tokenResponse.ok) {
-      throw new Error("token request failed");
+      throw new Error('token request failed');
     }
 
     const auth = await tokenResponse.json();
@@ -646,7 +666,7 @@ async function joinRoom(roomName = state.currentRoom) {
     if (!state.chatRoomExplicit) {
       state.chatRoom = auth.room;
     }
-    state.focusedScreenId = "";
+    state.focusedScreenId = '';
     state.activeSpeakerIds = new Set();
 
     const room = new Room({
@@ -659,7 +679,7 @@ async function joinRoom(roomName = state.currentRoom) {
 
     state.room = room;
     bindRoomEvents(room);
-    updateConnection("connecting");
+    updateConnection('connecting');
     await room.connect(auth.url, auth.token);
     selectRoom(auth.room, { loadHistory: false });
     await loadHistory(state.chatRoom || auth.room);
@@ -680,12 +700,12 @@ function bindRoomEvents(room) {
     .on(RoomEvent.ConnectionStateChanged, updateConnection)
     .on(RoomEvent.Connected, () => {
       if (room !== state.room) return;
-      updateConnection("online");
+      updateConnection('online');
       renderRoom();
     })
     .on(RoomEvent.Disconnected, () => {
       if (room !== state.room) return;
-      addSystemNotice("left room");
+      addSystemNotice('left room');
       void clearPresence();
       resetRoom();
     })
@@ -725,10 +745,10 @@ function bindRoomEvents(room) {
     })
     .on(RoomEvent.DataReceived, (payload, participant, _kind, topic) => {
       if (room !== state.room) return;
-      if (topic !== "chat") return;
+      if (topic !== 'chat') return;
       try {
         const data = JSON.parse(decoder.decode(payload));
-        if (data.type === "chat" && isChatMessage(data.message)) {
+        if (data.type === 'chat' && isChatMessage(data.message)) {
           // Only show if message belongs to the currently viewed chat room
           const msgRoom = data.message.room;
           if (msgRoom && msgRoom !== state.chatRoom) return;
@@ -766,9 +786,9 @@ function renderPeople(participants) {
   for (const p of participants) recordSeenUser(p);
 
   if (state.seenUsers.size === 0) {
-    const empty = document.createElement("div");
-    empty.className = "people-empty";
-    empty.textContent = "Nobody here yet.";
+    const empty = document.createElement('div');
+    empty.className = 'people-empty';
+    empty.textContent = 'Nobody here yet.';
     els.peopleList.appendChild(empty);
     return;
   }
@@ -782,7 +802,7 @@ function renderPeople(participants) {
     const aScore = liveByIdentity.has(a.identity) ? 2 : onlineInPresence.has(a.identity) ? 1 : 0;
     const bScore = liveByIdentity.has(b.identity) ? 2 : onlineInPresence.has(b.identity) ? 1 : 0;
     if (aScore !== bScore) return bScore - aScore;
-    return String(a.name || "").localeCompare(String(b.name || ""));
+    return String(a.name || '').localeCompare(String(b.name || ''));
   });
 
   for (const user of entries) {
@@ -791,17 +811,18 @@ function renderPeople(participants) {
     const isOnline = isLive || onlineInPresence.has(user.identity);
     const isSelf = user.identity === state.identity;
 
-    const row = document.createElement("article");
-    row.className = "person-row";
+    const row = document.createElement('article');
+    row.className = 'person-row';
     row.dataset.identity = user.identity;
-    if (isSelf) row.classList.add("is-local");
-    if (!isOnline) row.classList.add("is-offline");
-    if (isLive && !hasMic(participant)) row.classList.add("is-muted");
-    if (isLive && state.activeSpeakerIds.has(user.identity)) row.classList.add("is-speaking");
+    if (isSelf) row.classList.add('is-local');
+    if (!isOnline) row.classList.add('is-offline');
+    if (isLive && !hasMic(participant)) row.classList.add('is-muted');
+    if (isLive && state.activeSpeakerIds.has(user.identity)) row.classList.add('is-speaking');
 
-    const avatarUrl = (isLive ? participantAvatarUrl(participant) : null)
-      || user.photo_url
-      || avatarUrlForIdentity(user.identity, user.username);
+    const avatarUrl =
+      (isLive ? participantAvatarUrl(participant) : null) ||
+      user.photo_url ||
+      avatarUrlForIdentity(user.identity, user.username);
 
     const audioPref = getAudioPref(user.identity);
 
@@ -818,33 +839,33 @@ function renderPeople(participants) {
       </span>
     `;
 
-    renderAvatar(row.querySelector(".mini-avatar"), avatarUrl, user.name);
-    row.querySelector("strong").textContent = user.name || user.identity;
-    row.querySelector("small").textContent = isSelf ? "you" : isOnline ? "online" : "was here";
+    renderAvatar(row.querySelector('.mini-avatar'), avatarUrl, user.name);
+    row.querySelector('strong').textContent = user.name || user.identity;
+    row.querySelector('small').textContent = isSelf ? 'you' : isOnline ? 'online' : 'was here';
 
-    const personBadge = row.querySelector(".person-badge");
+    const personBadge = row.querySelector('.person-badge');
     if (isLive) {
-      const personStatus = hasMic(participant) ? "mic" : "muted";
+      const personStatus = hasMic(participant) ? 'mic' : 'muted';
       personBadge.innerHTML = iconSvg(personStatus);
       personBadge.title = personStatus;
     } else {
-      personBadge.innerHTML = "";
+      personBadge.innerHTML = '';
     }
 
-    const controls = row.querySelector(".person-audio-controls");
-    const muteButton = row.querySelector(".person-mute");
-    const volumeInput = row.querySelector(".person-volume");
+    const controls = row.querySelector('.person-audio-controls');
+    const muteButton = row.querySelector('.person-mute');
+    const volumeInput = row.querySelector('.person-volume');
 
     if (isSelf || !isLive) {
       controls.remove();
     } else {
       renderAudioControlState(muteButton, volumeInput, audioPref);
-      muteButton.addEventListener("click", () => {
+      muteButton.addEventListener('click', () => {
         const nextPref = setAudioPref(user.identity, { muted: !getAudioPref(user.identity).muted });
         renderAudioControlState(muteButton, volumeInput, nextPref);
         applyAudioPrefs(user.identity);
       });
-      volumeInput.addEventListener("input", () => {
+      volumeInput.addEventListener('input', () => {
         const nextPref = setAudioPref(user.identity, { volume: Number(volumeInput.value) / 100 });
         renderAudioControlState(muteButton, volumeInput, nextPref);
         applyAudioPrefs(user.identity);
@@ -856,32 +877,33 @@ function renderPeople(participants) {
 
 function renderVoiceStrip(participants) {
   els.voiceStrip.replaceChildren();
-  els.voiceStrip.classList.add("is-empty");
+  els.voiceStrip.classList.add('is-empty');
 }
 
 let _lbZoom = 1;
-const _LB_ZOOM_MIN = 0.5, _LB_ZOOM_MAX = 8;
+const _LB_ZOOM_MIN = 0.5,
+  _LB_ZOOM_MAX = 8;
 
 function openLightbox(url, alt, isVideo = false) {
   if (!els.lightbox) return;
   _lbZoom = 1;
-  if (els.lightboxInner) els.lightboxInner.style.transform = "";
+  if (els.lightboxInner) els.lightboxInner.style.transform = '';
   if (isVideo) {
     els.lightboxImg.hidden = true;
-    els.lightboxImg.removeAttribute("src");
+    els.lightboxImg.removeAttribute('src');
     els.lightboxVideo.src = url;
     els.lightboxVideo.hidden = false;
     els.lightboxVideo.play().catch(() => {});
   } else {
     els.lightboxVideo.hidden = true;
     els.lightboxVideo.pause?.();
-    els.lightboxVideo.removeAttribute("src");
+    els.lightboxVideo.removeAttribute('src');
     els.lightboxImg.src = url;
-    els.lightboxImg.alt = alt || "";
+    els.lightboxImg.alt = alt || '';
     els.lightboxImg.hidden = false;
   }
   els.lightbox.hidden = false;
-  document.body.style.overflow = "hidden";
+  document.body.style.overflow = 'hidden';
 }
 
 function toggleLightboxVideo() {
@@ -895,35 +917,36 @@ function toggleLightboxVideo() {
 function closeLightbox() {
   if (!els.lightbox) return;
   els.lightbox.hidden = true;
-  els.lightboxImg.removeAttribute("src");
+  els.lightboxImg.removeAttribute('src');
   els.lightboxVideo.pause?.();
-  els.lightboxVideo.removeAttribute("src");
-  document.body.style.overflow = "";
+  els.lightboxVideo.removeAttribute('src');
+  document.body.style.overflow = '';
   _lbZoom = 1;
 }
 
 function shouldGroupMessage(chatMessage) {
   const last = els.chatLog.lastElementChild;
   if (!last || !last.dataset?.messageIdentity) return false;
-  if (last.classList.contains("system-notice") || last.classList.contains("messages-empty")) return false;
+  if (last.classList.contains('system-notice') || last.classList.contains('messages-empty'))
+    return false;
   if (last.dataset.messageIdentity !== chatMessage.identity) return false;
   const lastId = last.dataset.messageId;
   const lastMsg = state.chatMessagesById.get(lastId);
   if (!lastMsg) return false;
-  return ((chatMessage.at || Date.now()) - (lastMsg.at || 0)) < 60_000;
+  return (chatMessage.at || Date.now()) - (lastMsg.at || 0) < 60_000;
 }
 
 function loadAudioPrefs() {
   try {
-    const data = JSON.parse(localStorage.getItem("debilbi:audioPrefs") || "{}");
-    return data && typeof data === "object" ? data : {};
+    const data = JSON.parse(localStorage.getItem('debilbi:audioPrefs') || '{}');
+    return data && typeof data === 'object' ? data : {};
   } catch {
     return {};
   }
 }
 
 function saveAudioPrefs() {
-  localStorage.setItem("debilbi:audioPrefs", JSON.stringify(state.audioPrefs));
+  localStorage.setItem('debilbi:audioPrefs', JSON.stringify(state.audioPrefs));
 }
 
 function getAudioPref(identity) {
@@ -948,17 +971,19 @@ function setAudioPref(identity, patch) {
 }
 
 function renderAudioControlState(muteButton, volumeInput, pref) {
-  muteButton.textContent = pref.muted ? "Muted" : "Mute";
-  muteButton.classList.toggle("active", pref.muted);
+  muteButton.textContent = pref.muted ? 'Muted' : 'Mute';
+  muteButton.classList.toggle('active', pref.muted);
   muteButton.disabled = false;
-  muteButton.title = pref.muted ? "Unmute locally" : "Mute locally";
+  muteButton.title = pref.muted ? 'Unmute locally' : 'Mute locally';
   volumeInput.value = String(Math.round(pref.volume * 100));
   volumeInput.disabled = false;
   volumeInput.title = `Local volume ${Math.round(pref.volume * 100)}%`;
 }
 
-function applyAudioPrefs(identity = "") {
-  const selector = identity ? `audio[data-participant-identity="${cssEscape(identity)}"]` : "audio[data-participant-identity]";
+function applyAudioPrefs(identity = '') {
+  const selector = identity
+    ? `audio[data-participant-identity="${cssEscape(identity)}"]`
+    : 'audio[data-participant-identity]';
   els.audioSink.querySelectorAll(selector).forEach((audio) => {
     const pref = getAudioPref(audio.dataset.participantIdentity);
     audio.volume = pref.volume;
@@ -970,29 +995,34 @@ function renderRoomListPresence(participants = []) {
   syncKnownAvatars(participants);
   els.roomItems.forEach((item) => {
     const roomId = item.dataset.roomItem;
-    const users = item.querySelector("[data-room-users]");
-    const pill = item.querySelector(".room-pill");
+    const users = item.querySelector('[data-room-users]');
+    const pill = item.querySelector('.room-pill');
     users.replaceChildren();
     const roomUsers = presenceUsersForRoom(roomId, participants);
-    item.classList.toggle("has-users", roomUsers.length > 0);
+    item.classList.toggle('has-users', roomUsers.length > 0);
     if (pill) {
-      pill.textContent = roomUsers.length ? String(roomUsers.length) : "";
+      pill.textContent = roomUsers.length ? String(roomUsers.length) : '';
     }
     for (const participant of roomUsers) {
-      const user = document.createElement("div");
-      user.className = "room-user";
-      if (!participant.mic) user.classList.add("is-muted");
-      if (participant.screen) user.classList.add("is-screening");
-      if (roomId === state.currentRoom && state.activeSpeakerIds.has(participant.identity)) user.classList.add("is-speaking");
-      const stateLabel = participant.screen ? "screen" : participant.mic ? "mic" : "muted";
+      const user = document.createElement('div');
+      user.className = 'room-user';
+      if (!participant.mic) user.classList.add('is-muted');
+      if (participant.screen) user.classList.add('is-screening');
+      if (roomId === state.currentRoom && state.activeSpeakerIds.has(participant.identity))
+        user.classList.add('is-speaking');
+      const stateLabel = participant.screen ? 'screen' : participant.mic ? 'mic' : 'muted';
       user.innerHTML = `
         <span class="room-user-avatar"></span>
         <span class="room-user-name"></span>
         <span class="room-user-state"></span>
       `;
-      renderAvatar(user.querySelector(".room-user-avatar"), participantAvatarUrl(participant) || participant.photo_url, participant.name);
-      user.querySelector(".room-user-name").textContent = participant.name;
-      const roomState = user.querySelector(".room-user-state");
+      renderAvatar(
+        user.querySelector('.room-user-avatar'),
+        participantAvatarUrl(participant) || participant.photo_url,
+        participant.name
+      );
+      user.querySelector('.room-user-name').textContent = participant.name;
+      const roomState = user.querySelector('.room-user-state');
       roomState.innerHTML = iconSvg(stateLabel);
       roomState.title = participant.self ? `you, ${stateLabel}` : stateLabel;
       users.appendChild(user);
@@ -1023,9 +1053,10 @@ function presenceUsersForRoom(roomId, localParticipants = []) {
       });
     }
   }
-  return Array.from(usersByIdentity.values()).sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+  return Array.from(usersByIdentity.values()).sort((a, b) =>
+    String(a.name || '').localeCompare(String(b.name || ''))
+  );
 }
-
 
 function selectedScreenPreset() {
   state.screenQuality = normalizeScreenQuality(state.screenQuality);
@@ -1034,7 +1065,7 @@ function selectedScreenPreset() {
 
 function normalizeScreenQuality(value) {
   const migrated = legacyScreenQualityMap[value] || value;
-  return screenQualityPresets[migrated] ? migrated : "smooth1080";
+  return screenQualityPresets[migrated] ? migrated : 'smooth1080';
 }
 
 function buildScreenCaptureOptions() {
@@ -1047,9 +1078,9 @@ function buildScreenCaptureOptions() {
       height: preset.height,
       frameRate: preset.fps,
     },
-    selfBrowserSurface: "exclude",
-    surfaceSwitching: "include",
-    systemAudio: "include",
+    selfBrowserSurface: 'exclude',
+    surfaceSwitching: 'include',
+    systemAudio: 'include',
   };
 }
 
@@ -1060,7 +1091,7 @@ function buildScreenPublishOptions() {
     screenShareEncoding: {
       maxBitrate: preset.bitrate,
       maxFramerate: preset.fps,
-      priority: "high",
+      priority: 'high',
     },
     simulcast: preset.simulcast ?? true,
   };
@@ -1078,11 +1109,19 @@ async function setScreenShare(enabled) {
       renderRoom();
       return;
     }
-    await state.room.localParticipant.setScreenShareEnabled(true, buildScreenCaptureOptions(), buildScreenPublishOptions());
+    await state.room.localParticipant.setScreenShareEnabled(
+      true,
+      buildScreenCaptureOptions(),
+      buildScreenPublishOptions()
+    );
   } catch (error) {
     if (enabled && !isCaptureCancel(error)) {
       await state.room.localParticipant.setScreenShareEnabled(false).catch(() => {});
-      await state.room.localParticipant.setScreenShareEnabled(true, buildScreenCaptureOptions(), buildScreenPublishOptions());
+      await state.room.localParticipant.setScreenShareEnabled(
+        true,
+        buildScreenCaptureOptions(),
+        buildScreenPublishOptions()
+      );
     } else {
       throw error;
     }
@@ -1097,7 +1136,7 @@ async function restartScreenShare() {
 }
 
 function isCaptureCancel(error) {
-  return ["AbortError", "NotAllowedError", "NotFoundError"].includes(error?.name);
+  return ['AbortError', 'NotAllowedError', 'NotFoundError'].includes(error?.name);
 }
 
 function renderScreens(screens) {
@@ -1105,8 +1144,8 @@ function renderScreens(screens) {
   els.screenStrip.replaceChildren();
 
   if (!screens.length) {
-    state.focusedScreenId = "";
-    els.screenStage.classList.add("is-hidden");
+    state.focusedScreenId = '';
+    els.screenStage.classList.add('is-hidden');
     renderTheater();
     return;
   }
@@ -1116,34 +1155,34 @@ function renderScreens(screens) {
   }
 
   const focused = screens.find((screen) => screen.id === state.focusedScreenId) || screens[0];
-  els.screenStage.classList.remove("is-hidden");
-  els.screenFocus.classList.toggle("fit-cover", state.screenFit === "cover");
+  els.screenStage.classList.remove('is-hidden');
+  els.screenFocus.classList.toggle('fit-cover', state.screenFit === 'cover');
 
-  const focusTile = document.createElement("article");
-  focusTile.className = "focused-screen";
+  const focusTile = document.createElement('article');
+  focusTile.className = 'focused-screen';
   const focusVideo = focused.track.attach();
   focusVideo.__livekitTrack = focused.track;
   focusVideo.autoplay = true;
   focusVideo.playsInline = true;
   focusVideo.muted = focused.participant.isLocal;
   focusTile.append(focusVideo, screenLabel(focused));
-  focusTile.addEventListener("dblclick", openTheater);
+  focusTile.addEventListener('dblclick', openTheater);
   els.screenFocus.appendChild(focusTile);
 
   for (const screen of screens) {
-    const thumb = document.createElement("button");
-    thumb.type = "button";
-    thumb.className = "screen-thumb";
-    if (screen.id === state.focusedScreenId) thumb.classList.add("active");
+    const thumb = document.createElement('button');
+    thumb.type = 'button';
+    thumb.className = 'screen-thumb';
+    if (screen.id === state.focusedScreenId) thumb.classList.add('active');
     const video = screen.track.attach();
     video.__livekitTrack = screen.track;
     video.autoplay = true;
     video.playsInline = true;
     video.muted = true;
-    const name = document.createElement("span");
+    const name = document.createElement('span');
     name.textContent = displayName(screen.participant);
     thumb.append(video, name);
-    thumb.addEventListener("click", () => {
+    thumb.addEventListener('click', () => {
       state.focusedScreenId = screen.id;
       renderRoom();
     });
@@ -1156,27 +1195,29 @@ function renderScreens(screens) {
 function renderTheater() {
   els.theaterMedia.replaceChildren();
   if (!state.theaterOpen) {
-    els.theater.classList.remove("open");
-    els.theater.setAttribute("aria-hidden", "true");
+    els.theater.classList.remove('open');
+    els.theater.setAttribute('aria-hidden', 'true');
     syncTheaterControls();
     return;
   }
 
-  const focused = collectVisibleScreenShares(getParticipants()).find((screen) => screen.id === state.focusedScreenId);
+  const focused = collectVisibleScreenShares(getParticipants()).find(
+    (screen) => screen.id === state.focusedScreenId
+  );
   if (!focused) {
     void closeTheater();
     return;
   }
 
-  els.theater.classList.add("open");
-  els.theater.setAttribute("aria-hidden", "false");
+  els.theater.classList.add('open');
+  els.theater.setAttribute('aria-hidden', 'false');
   els.theaterTitle.textContent = `${displayName(focused.participant)} screen`;
   const video = focused.track.attach();
   video.__livekitTrack = focused.track;
   video.autoplay = true;
   video.playsInline = true;
   video.muted = focused.participant.isLocal;
-  els.theaterMedia.classList.toggle("fit-cover", state.screenFit === "cover");
+  els.theaterMedia.classList.toggle('fit-cover', state.screenFit === 'cover');
   els.theaterMedia.appendChild(video);
   syncTheaterControls();
 }
@@ -1185,7 +1226,8 @@ function attachAudio(participants) {
   const desiredByIdentity = new Map();
   for (const participant of participants) {
     const publications = Array.from(participant.trackPublications.values()).filter(
-      (publication) => publication?.track && publication.track.kind === Track.Kind.Audio && !publication.isMuted
+      (publication) =>
+        publication?.track && publication.track.kind === Track.Kind.Audio && !publication.isMuted
     );
     if (!publications.length) continue;
     const publication =
@@ -1199,8 +1241,8 @@ function attachAudio(participants) {
   }
 
   const existingByIdentity = new Map();
-  els.audioSink.querySelectorAll("audio[data-participant-identity]").forEach((audio) => {
-    const identity = audio.dataset.participantIdentity || "";
+  els.audioSink.querySelectorAll('audio[data-participant-identity]').forEach((audio) => {
+    const identity = audio.dataset.participantIdentity || '';
     if (!identity) {
       detachAudioElement(audio);
       return;
@@ -1253,7 +1295,7 @@ function attachAudio(participants) {
 
 function applyAudioElementState(element, participant, audioPref, publication) {
   element.dataset.participantIdentity = participant.identity;
-  element.dataset.trackSid = publication.trackSid || publication.track?.sid || "";
+  element.dataset.trackSid = publication.trackSid || publication.track?.sid || '';
   element.autoplay = true;
   element.playsInline = true;
   element.controls = false;
@@ -1278,7 +1320,8 @@ function collectScreenShares(participants) {
   const screens = [];
   for (const participant of participants) {
     for (const publication of participant.trackPublications.values()) {
-      if (!publication.track || publication.track.kind !== Track.Kind.Video || publication.isMuted) continue;
+      if (!publication.track || publication.track.kind !== Track.Kind.Video || publication.isMuted)
+        continue;
       if (publication.source !== Track.Source.ScreenShare) continue;
       screens.push({
         id: publication.trackSid || `${participant.identity}-screen`,
@@ -1292,22 +1335,22 @@ function collectScreenShares(participants) {
 }
 
 function screenLabel(screen) {
-  const label = document.createElement("div");
-  label.className = "screen-label";
-  const name = document.createElement("strong");
+  const label = document.createElement('div');
+  label.className = 'screen-label';
+  const name = document.createElement('strong');
   name.textContent = `${displayName(screen.participant)} screen`;
-  const hint = document.createElement("span");
-  hint.textContent = "double click to expand";
+  const hint = document.createElement('span');
+  hint.textContent = 'double click to expand';
   label.append(name, hint);
   return label;
 }
 
 function clearMedia() {
   [
-    ...els.screenFocus.querySelectorAll("video, audio"),
-    ...els.screenStrip.querySelectorAll("video, audio"),
-    ...els.theaterMedia.querySelectorAll("video, audio"),
-    ...els.audioSink.querySelectorAll("audio"),
+    ...els.screenFocus.querySelectorAll('video, audio'),
+    ...els.screenStrip.querySelectorAll('video, audio'),
+    ...els.theaterMedia.querySelectorAll('video, audio'),
+    ...els.audioSink.querySelectorAll('audio'),
   ].forEach((element) => {
     if (element.__livekitTrack?.detach) {
       try {
@@ -1348,7 +1391,7 @@ function recordSeenUser(participant) {
     identity: participant.identity,
     name: displayName(participant),
     username: profile.username,
-    photo_url: profile.photoUrl || state.seenUsers.get(participant.identity)?.photo_url || "",
+    photo_url: profile.photoUrl || state.seenUsers.get(participant.identity)?.photo_url || '',
   });
 }
 
@@ -1357,17 +1400,17 @@ function recordSeenUserFromPresence(user) {
   const existing = state.seenUsers.get(user.identity) || {};
   state.seenUsers.set(user.identity, {
     identity: user.identity,
-    name: user.name || existing.name || "",
-    username: user.username || existing.username || "",
-    photo_url: user.photo_url || existing.photo_url || "",
+    name: user.name || existing.name || '',
+    username: user.username || existing.username || '',
+    photo_url: user.photo_url || existing.photo_url || '',
   });
 }
 
 async function refreshPresence() {
   if (!state.session) return;
   try {
-    const response = await fetch("/api/presence", { headers: authHeaders() });
-    if (!response.ok) throw new Error("presence request failed");
+    const response = await fetch('/api/presence', { headers: authHeaders() });
+    if (!response.ok) throw new Error('presence request failed');
     const data = await response.json();
     state.presenceByRoom = data.rooms || {};
     // Track everyone seen in presence
@@ -1388,16 +1431,16 @@ async function refreshPresence() {
 async function pushPresence() {
   if (!state.session || !isConnected()) return;
   try {
-    const response = await fetch("/api/presence", {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
+    const response = await fetch('/api/presence', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         room: state.currentRoom,
         mic: hasLocalMic(),
         screen: hasLocalScreen(),
       }),
     });
-    if (!response.ok) throw new Error("presence update failed");
+    if (!response.ok) throw new Error('presence update failed');
     const data = await response.json();
     state.presenceByRoom = data.rooms || {};
     const participants = getParticipants();
@@ -1412,10 +1455,10 @@ async function pushPresence() {
 async function clearPresence() {
   if (!state.session) return;
   try {
-    const response = await fetch("/api/presence", {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
-      body: JSON.stringify({ room: "" }),
+    const response = await fetch('/api/presence', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ room: '' }),
     });
     if (response.ok) {
       const data = await response.json();
@@ -1432,8 +1475,8 @@ async function clearPresence() {
 
 async function loadChannels() {
   try {
-    const response = await fetch("/api/channels", { headers: authHeaders() });
-    if (!response.ok) throw new Error("channels request failed");
+    const response = await fetch('/api/channels', { headers: authHeaders() });
+    if (!response.ok) throw new Error('channels request failed');
     const data = await response.json();
     if (Array.isArray(data.channels)) {
       state.channels = data.channels;
@@ -1450,27 +1493,27 @@ function applyChannelLabels() {
   for (const channel of state.channels) {
     const item = document.querySelector(`[data-room-item="${cssEscape(channel.id)}"]`);
     if (!item) continue;
-    const name = item.querySelector(".room-name");
-    const topic = item.querySelector(".room-topic");
+    const name = item.querySelector('.room-name');
+    const topic = item.querySelector('.room-topic');
     if (name) name.textContent = channel.name || channel.id;
-    if (topic) topic.textContent = "";
+    if (topic) topic.textContent = '';
   }
 }
 
 async function renameChannel(roomName) {
   const channel = state.channels.find((item) => item.id === roomName);
   const currentName = channel?.name || roomName;
-  const nextName = window.prompt("Rename channel", currentName);
+  const nextName = window.prompt('Rename channel', currentName);
   if (nextName === null) return;
   const clean = nextName.trim();
   if (!clean || clean === currentName) return;
   try {
-    const response = await fetch("/api/channels/rename", {
-      method: "POST",
-      headers: authHeaders({ "Content-Type": "application/json" }),
+    const response = await fetch('/api/channels/rename', {
+      method: 'POST',
+      headers: authHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ room: roomName, name: clean }),
     });
-    if (!response.ok) throw new Error("rename failed");
+    if (!response.ok) throw new Error('rename failed');
     const data = await response.json();
     state.channels = Array.isArray(data.channels) ? data.channels : state.channels;
     applyChannelLabels();
@@ -1487,10 +1530,12 @@ function channelLabel(roomName) {
 }
 
 async function loadHistory(roomName) {
-  const room = roomName || state.chatRoom || state.currentRoom || "lobby";
+  const room = roomName || state.chatRoom || state.currentRoom || 'lobby';
   try {
-    const response = await fetch(`/api/messages?room=${encodeURIComponent(room)}&limit=150`, { headers: authHeaders() });
-    if (!response.ok) throw new Error("history request failed");
+    const response = await fetch(`/api/messages?room=${encodeURIComponent(room)}&limit=150`, {
+      headers: authHeaders(),
+    });
+    if (!response.ok) throw new Error('history request failed');
     const data = await response.json();
     syncKnownAvatars(data.messages || []);
     clearMessages();
@@ -1502,24 +1547,24 @@ async function loadHistory(roomName) {
       }
     }
     if (!(data.messages || []).length) {
-      addEmptyNotice("No messages yet.");
+      addEmptyNotice('No messages yet.');
     }
   } catch (error) {
     console.error(error);
     clearMessages();
-    addEmptyNotice("History is unavailable.");
+    addEmptyNotice('History is unavailable.');
   } finally {
     updateControls();
   }
 }
 
 async function saveMessage(body, attachments = []) {
-  const response = await fetch("/api/messages", {
-    method: "POST",
-    headers: authHeaders({ "Content-Type": "application/json" }),
+  const response = await fetch('/api/messages', {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
-      room: state.chatRoom || state.currentRoom || "lobby",
-      author: state.name || els.displayName.value || "Guest",
+      room: state.chatRoom || state.currentRoom || 'lobby',
+      author: state.name || els.displayName.value || 'Guest',
       identity: state.identity,
       body,
       attachments,
@@ -1527,7 +1572,7 @@ async function saveMessage(body, attachments = []) {
   });
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new Error(data.error || "history save failed");
+    throw new Error(data.error || 'history save failed');
   }
   const data = await response.json();
   return data.message;
@@ -1538,10 +1583,10 @@ function addPendingFiles(files) {
   const freeSlots = Math.max(0, 5 - state.pendingFiles.length);
   state.pendingFiles = state.pendingFiles.concat(nextFiles.slice(0, freeSlots));
   if (nextFiles.length !== files.length) {
-    addSystemNotice("some files are larger than 100 MB");
+    addSystemNotice('some files are larger than 100 MB');
   }
   if (files.length > freeSlots) {
-    addSystemNotice("up to 5 files per message");
+    addSystemNotice('up to 5 files per message');
   }
   renderAttachmentTray();
 }
@@ -1549,7 +1594,7 @@ function addPendingFiles(files) {
 function getClipboardFiles(clipboardData) {
   if (!clipboardData) return [];
   const itemFiles = Array.from(clipboardData.items || [])
-    .filter((item) => item.kind === "file")
+    .filter((item) => item.kind === 'file')
     .map((item) => item.getAsFile())
     .filter(Boolean);
   const files = itemFiles.length ? itemFiles : Array.from(clipboardData.files || []);
@@ -1557,8 +1602,8 @@ function getClipboardFiles(clipboardData) {
 }
 
 function normalizeClipboardFile(file, index) {
-  const type = file.type || "image/png";
-  const hasName = file.name && file.name !== "image.png";
+  const type = file.type || 'image/png';
+  const hasName = file.name && file.name !== 'image.png';
   if (hasName) return file;
   const extension = clipboardFileExtension(type);
   return new File([file], `screenshot-${Date.now()}-${index + 1}.${extension}`, {
@@ -1568,25 +1613,25 @@ function normalizeClipboardFile(file, index) {
 }
 
 function clipboardFileExtension(type) {
-  if (type === "image/jpeg") return "jpg";
-  if (type === "image/webp") return "webp";
-  if (type === "image/gif") return "gif";
-  return "png";
+  if (type === 'image/jpeg') return 'jpg';
+  if (type === 'image/webp') return 'webp';
+  if (type === 'image/gif') return 'gif';
+  return 'png';
 }
 
 function renderAttachmentTray() {
   els.attachmentTray.replaceChildren();
   els.attachmentTray.hidden = state.pendingFiles.length === 0;
   state.pendingFiles.forEach((file, index) => {
-    const chip = document.createElement("span");
-    chip.className = "attachment-chip";
-    const name = document.createElement("span");
+    const chip = document.createElement('span');
+    chip.className = 'attachment-chip';
+    const name = document.createElement('span');
     name.textContent = `${file.name} · ${formatBytes(file.size)}`;
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.textContent = "x";
-    remove.title = "Remove file";
-    remove.addEventListener("click", () => {
+    const remove = document.createElement('button');
+    remove.type = 'button';
+    remove.textContent = 'x';
+    remove.title = 'Remove file';
+    remove.addEventListener('click', () => {
       state.pendingFiles.splice(index, 1);
       renderAttachmentTray();
     });
@@ -1599,9 +1644,9 @@ async function uploadFiles(files) {
   const attachments = [];
   for (const file of files) {
     const formData = new FormData();
-    formData.append("file", file);
-    const response = await fetch("/api/upload", {
-      method: "POST",
+    formData.append('file', file);
+    const response = await fetch('/api/upload', {
+      method: 'POST',
       headers: authHeaders(),
       body: formData,
     });
@@ -1622,7 +1667,7 @@ function setComposerBusy(isBusy) {
   els.chatSend.disabled = isBusy || !canChat;
   els.fileButton.disabled = isBusy || !canChat;
   els.chatInput.disabled = isBusy || !canChat;
-  els.chatSend.textContent = isBusy ? "..." : "Send";
+  els.chatSend.textContent = isBusy ? '...' : 'Send';
 }
 
 // ── Mention sound ──────────────────────────────────────────────────
@@ -1635,7 +1680,7 @@ function playMentionSound() {
       const gain = ctx.createGain();
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.type = "sine";
+      osc.type = 'sine';
       osc.frequency.setValueAtTime(880, ctx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.12);
       gain.gain.setValueAtTime(0.18, ctx.currentTime);
@@ -1654,7 +1699,8 @@ function isMentioned(body) {
   const username = state.user.username;
   const name = state.user.name;
   if (username && body.toLowerCase().includes(`@${username.toLowerCase()}`)) return true;
-  if (name && body.toLowerCase().includes(`@${name.toLowerCase().replace(/\s+/g, "")}`)) return true;
+  if (name && body.toLowerCase().includes(`@${name.toLowerCase().replace(/\s+/g, '')}`))
+    return true;
   return false;
 }
 
@@ -1673,10 +1719,12 @@ function getMentionQuery() {
 
 function getMentionCandidates(query) {
   const seen = Array.from(state.seenUsers.values());
-  return seen.filter((u) => {
-    const n = (u.username || u.name || "").toLowerCase();
-    return n.startsWith(query) && u.identity !== state.identity;
-  }).slice(0, 6);
+  return seen
+    .filter((u) => {
+      const n = (u.username || u.name || '').toLowerCase();
+      return n.startsWith(query) && u.identity !== state.identity;
+    })
+    .slice(0, 6);
 }
 
 function closeMentionPopup() {
@@ -1689,16 +1737,18 @@ function showMentionPopup(candidates, mention) {
   closeMentionPopup();
   if (!candidates.length) return;
   mentionStart = mention.start;
-  const popup = document.createElement("div");
-  popup.className = "mention-popup";
+  const popup = document.createElement('div');
+  popup.className = 'mention-popup';
   for (const user of candidates) {
-    const item = document.createElement("button");
-    item.type = "button";
-    item.className = "mention-item";
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'mention-item';
     const display = user.username ? `@${user.username}` : user.name;
-    const sub = user.username ? user.name : "";
-    item.innerHTML = `<span class="mention-name">${display}</span>${sub ? `<span class="mention-sub">${sub}</span>` : ""}`;
-    item.addEventListener("mousedown", (e) => {
+    const sub = user.username ? user.name : '';
+    item.innerHTML = `<span class="mention-name">${display}</span>${
+      sub ? `<span class="mention-sub">${sub}</span>` : ''
+    }`;
+    item.addEventListener('mousedown', (e) => {
       e.preventDefault();
       insertMention(user, mention);
       closeMentionPopup();
@@ -1707,8 +1757,8 @@ function showMentionPopup(candidates, mention) {
   }
   // Position above composer
   const composerRect = els.chatForm.getBoundingClientRect();
-  popup.style.left = composerRect.left + 16 + "px";
-  popup.style.bottom = window.innerHeight - composerRect.top + 4 + "px";
+  popup.style.left = composerRect.left + 16 + 'px';
+  popup.style.bottom = window.innerHeight - composerRect.top + 4 + 'px';
   document.body.appendChild(popup);
   mentionPopup = popup;
 }
@@ -1718,44 +1768,47 @@ function insertMention(user, mention) {
   const val = els.chatInput.value;
   const before = val.slice(0, mention.start);
   const after = val.slice(mention.end);
-  els.chatInput.value = before + tag + " " + after;
+  els.chatInput.value = before + tag + ' ' + after;
   const newPos = mention.start + tag.length + 1;
   els.chatInput.setSelectionRange(newPos, newPos);
   els.chatInput.focus();
-  els.chatInput.dispatchEvent(new Event("input"));
+  els.chatInput.dispatchEvent(new Event('input'));
 }
 
 function setupMentionAutocomplete() {
-  els.chatInput.addEventListener("input", () => {
+  els.chatInput.addEventListener('input', () => {
     const mention = getMentionQuery();
-    if (!mention) { closeMentionPopup(); return; }
+    if (!mention) {
+      closeMentionPopup();
+      return;
+    }
     const candidates = getMentionCandidates(mention.query);
     if (candidates.length) showMentionPopup(candidates, mention);
     else closeMentionPopup();
   });
 
-  els.chatInput.addEventListener("keydown", (e) => {
+  els.chatInput.addEventListener('keydown', (e) => {
     if (!mentionPopup) return;
-    const items = mentionPopup.querySelectorAll(".mention-item");
-    const active = mentionPopup.querySelector(".mention-item.active");
+    const items = mentionPopup.querySelectorAll('.mention-item');
+    const active = mentionPopup.querySelector('.mention-item.active');
     const idx = active ? Array.from(items).indexOf(active) : -1;
-    if (e.key === "ArrowDown") {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
-      items.forEach((el) => el.classList.remove("active"));
-      (items[idx + 1] || items[0])?.classList.add("active");
-    } else if (e.key === "ArrowUp") {
+      items.forEach((el) => el.classList.remove('active'));
+      (items[idx + 1] || items[0])?.classList.add('active');
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      items.forEach((el) => el.classList.remove("active"));
-      (items[idx - 1] || items[items.length - 1])?.classList.add("active");
-    } else if (e.key === "Tab" || (e.key === "Enter" && active)) {
+      items.forEach((el) => el.classList.remove('active'));
+      (items[idx - 1] || items[items.length - 1])?.classList.add('active');
+    } else if (e.key === 'Tab' || (e.key === 'Enter' && active)) {
       e.preventDefault();
-      active?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-    } else if (e.key === "Escape") {
+      active?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+    } else if (e.key === 'Escape') {
       closeMentionPopup();
     }
   });
 
-  els.chatInput.addEventListener("blur", () => {
+  els.chatInput.addEventListener('blur', () => {
     setTimeout(closeMentionPopup, 150);
   });
 }
@@ -1769,34 +1822,38 @@ function addMessage(chatMessage, own) {
   recordAvatar(chatMessage.identity, chatMessage.photo_url, chatMessage.username);
 
   const grouped = shouldGroupMessage(chatMessage);
-  const row = document.createElement("article");
-  row.className = "message";
-  row.dataset.messageIdentity = chatMessage.identity || "";
-  row.dataset.messageId = chatMessage.id || `${chatMessage.identity || "message"}-${chatMessage.at || Date.now()}`;
-  if (own) row.classList.add("own");
-  if (grouped) row.classList.add("grouped");
+  const row = document.createElement('article');
+  row.className = 'message';
+  row.dataset.messageIdentity = chatMessage.identity || '';
+  row.dataset.messageId =
+    chatMessage.id || `${chatMessage.identity || 'message'}-${chatMessage.at || Date.now()}`;
+  if (own) row.classList.add('own');
+  if (grouped) row.classList.add('grouped');
 
-  const avatar = document.createElement("span");
-  avatar.className = "message-avatar";
-  renderAvatar(avatar, messageAvatarUrl(chatMessage), chatMessage.author || "Guest");
+  const avatar = document.createElement('span');
+  avatar.className = 'message-avatar';
+  renderAvatar(avatar, messageAvatarUrl(chatMessage), chatMessage.author || 'Guest');
 
-  const contentWrap = document.createElement("div");
-  contentWrap.className = "message-content";
+  const contentWrap = document.createElement('div');
+  contentWrap.className = 'message-content';
 
-  const meta = document.createElement("div");
-  meta.className = "message-meta";
-  const name = document.createElement("strong");
-  name.textContent = chatMessage.author || "Guest";
-  const time = document.createElement("span");
-  time.textContent = new Date(chatMessage.at || Date.now()).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const meta = document.createElement('div');
+  meta.className = 'message-meta';
+  const name = document.createElement('strong');
+  name.textContent = chatMessage.author || 'Guest';
+  const time = document.createElement('span');
+  time.textContent = new Date(chatMessage.at || Date.now()).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
   meta.append(name, time);
   contentWrap.appendChild(meta);
 
   if (chatMessage.body) {
-    const content = document.createElement("p");
+    const content = document.createElement('p');
     const isFresh = Date.now() - (chatMessage.at || 0) < 30_000;
     if (!own && isMentioned(chatMessage.body)) {
-      row.classList.add("is-mention");
+      row.classList.add('is-mention');
       if (isFresh) playMentionSound();
     }
     content.textContent = chatMessage.body;
@@ -1807,7 +1864,7 @@ function addMessage(chatMessage, own) {
     contentWrap.appendChild(attachments);
   }
   row.append(avatar, contentWrap);
-  els.chatLog.querySelector(".messages-empty")?.remove();
+  els.chatLog.querySelector('.messages-empty')?.remove();
   els.chatLog.appendChild(row);
   state.chatMessagesById.set(row.dataset.messageId, chatMessage);
   els.chatLog.scrollTop = els.chatLog.scrollHeight;
@@ -1815,99 +1872,101 @@ function addMessage(chatMessage, own) {
 
 function renderMessageAttachments(attachments) {
   if (!Array.isArray(attachments) || !attachments.length) return null;
-  const wrap = document.createElement("div");
-  wrap.className = "message-attachments";
+  const wrap = document.createElement('div');
+  wrap.className = 'message-attachments';
   for (const attachment of attachments) {
     if (!attachment?.url) continue;
     const kind = getAttachmentKind(attachment);
-    if (kind === "image") {
-      const link = document.createElement("button");
-      link.type = "button";
-      link.className = "image-attachment";
+    if (kind === 'image') {
+      const link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'image-attachment';
 
-      const image = document.createElement("img");
-      image.className = "attachment-preview";
+      const image = document.createElement('img');
+      image.className = 'attachment-preview';
       image.src = attachment.url;
-      image.alt = attachment.name || "image attachment";
-      image.loading = "lazy";
+      image.alt = attachment.name || 'image attachment';
+      image.loading = 'lazy';
 
       link.appendChild(image);
-      link.addEventListener("click", () => openLightbox(attachment.url, attachment.name || ""));
+      link.addEventListener('click', () => openLightbox(attachment.url, attachment.name || ''));
       wrap.appendChild(link);
       continue;
     }
 
-    if (kind === "video") {
-      const card = document.createElement("button");
-      card.type = "button";
-      card.className = "message-attachment media-attachment video-attachment";
-      const icon = document.createElement("span");
-      icon.className = "attachment-icon";
-      icon.textContent = "▶";
-      const main = document.createElement("span");
-      main.className = "attachment-main";
-      const namEl = document.createElement("span");
-      namEl.className = "attachment-name";
-      namEl.textContent = attachment.name || "video";
-      const meta = document.createElement("span");
-      meta.className = "attachment-meta";
-      meta.textContent = `${attachment.type || "video"} · ${formatBytes(attachment.size || 0)}`;
+    if (kind === 'video') {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'message-attachment media-attachment video-attachment';
+      const icon = document.createElement('span');
+      icon.className = 'attachment-icon';
+      icon.textContent = '▶';
+      const main = document.createElement('span');
+      main.className = 'attachment-main';
+      const namEl = document.createElement('span');
+      namEl.className = 'attachment-name';
+      namEl.textContent = attachment.name || 'video';
+      const meta = document.createElement('span');
+      meta.className = 'attachment-meta';
+      meta.textContent = `${attachment.type || 'video'} · ${formatBytes(attachment.size || 0)}`;
       main.append(namEl, meta);
       card.append(icon, main);
-      card.addEventListener("click", () => openLightbox(attachment.url, attachment.name || "", true));
+      card.addEventListener('click', () =>
+        openLightbox(attachment.url, attachment.name || '', true)
+      );
       wrap.appendChild(card);
       continue;
     }
 
-    if (kind === "audio") {
-      const card = document.createElement("article");
-      card.className = "message-attachment media-attachment audio-attachment";
-      const icon = document.createElement("span");
-      icon.className = "attachment-icon";
-      icon.textContent = "AUD";
-      const main = document.createElement("span");
-      main.className = "attachment-main";
-      const namEl = document.createElement("span");
-      namEl.className = "attachment-name";
-      namEl.textContent = attachment.name || "audio";
-      const meta = document.createElement("span");
-      meta.className = "attachment-meta";
-      meta.textContent = `${attachment.type || "audio"} · ${formatBytes(attachment.size || 0)}`;
+    if (kind === 'audio') {
+      const card = document.createElement('article');
+      card.className = 'message-attachment media-attachment audio-attachment';
+      const icon = document.createElement('span');
+      icon.className = 'attachment-icon';
+      icon.textContent = 'AUD';
+      const main = document.createElement('span');
+      main.className = 'attachment-main';
+      const namEl = document.createElement('span');
+      namEl.className = 'attachment-name';
+      namEl.textContent = attachment.name || 'audio';
+      const meta = document.createElement('span');
+      meta.className = 'attachment-meta';
+      meta.textContent = `${attachment.type || 'audio'} · ${formatBytes(attachment.size || 0)}`;
       main.append(namEl, meta);
-      const player = document.createElement("audio");
-      player.className = "attachment-player attachment-audio";
+      const player = document.createElement('audio');
+      player.className = 'attachment-player attachment-audio';
       player.controls = true;
-      player.preload = "metadata";
+      player.preload = 'metadata';
       player.src = attachment.url;
       card.append(icon, main, player);
       wrap.appendChild(card);
       continue;
     }
 
-    const link = document.createElement("a");
-    link.className = "message-attachment";
+    const link = document.createElement('a');
+    link.className = 'message-attachment';
     link.href = attachment.url;
-    link.target = "_blank";
-    link.rel = "noopener";
-    link.download = attachment.name || "";
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.download = attachment.name || '';
 
-    const icon = document.createElement("span");
-    icon.className = "attachment-icon";
-    icon.textContent = "FILE";
+    const icon = document.createElement('span');
+    icon.className = 'attachment-icon';
+    icon.textContent = 'FILE';
 
-    const main = document.createElement("span");
-    main.className = "attachment-main";
-    const name = document.createElement("span");
-    name.className = "attachment-name";
-    name.textContent = attachment.name || "file";
-    const meta = document.createElement("span");
-    meta.className = "attachment-meta";
-    meta.textContent = `${attachment.type || "file"} · ${formatBytes(attachment.size || 0)}`;
+    const main = document.createElement('span');
+    main.className = 'attachment-main';
+    const name = document.createElement('span');
+    name.className = 'attachment-name';
+    name.textContent = attachment.name || 'file';
+    const meta = document.createElement('span');
+    meta.className = 'attachment-meta';
+    meta.textContent = `${attachment.type || 'file'} · ${formatBytes(attachment.size || 0)}`;
     main.append(name, meta);
 
-    const open = document.createElement("span");
-    open.className = "attachment-meta attachment-open-label";
-    open.textContent = "Open";
+    const open = document.createElement('span');
+    open.className = 'attachment-meta attachment-open-label';
+    open.textContent = 'Open';
     link.append(icon, main, open);
 
     wrap.appendChild(link);
@@ -1916,34 +1975,34 @@ function renderMessageAttachments(attachments) {
 }
 
 function getAttachmentKind(attachment) {
-  const type = String(attachment.type || "").toLowerCase();
+  const type = String(attachment.type || '').toLowerCase();
   const extension = getAttachmentExtension(attachment);
-  if (type.startsWith("image/")) return "image";
-  if (type.startsWith("audio/") || audioAttachmentExtensions.has(extension)) return "audio";
-  if (type.startsWith("video/") || videoAttachmentExtensions.has(extension)) return "video";
-  return "file";
+  if (type.startsWith('image/')) return 'image';
+  if (type.startsWith('audio/') || audioAttachmentExtensions.has(extension)) return 'audio';
+  if (type.startsWith('video/') || videoAttachmentExtensions.has(extension)) return 'video';
+  return 'file';
 }
 
 function getAttachmentExtension(attachment) {
-  const source = String(attachment.name || attachment.url || "");
+  const source = String(attachment.name || attachment.url || '');
   const clean = source.split(/[?#]/)[0];
-  const fileName = clean.slice(clean.lastIndexOf("/") + 1);
-  const dotIndex = fileName.lastIndexOf(".");
-  return dotIndex >= 0 ? fileName.slice(dotIndex + 1).toLowerCase() : "";
+  const fileName = clean.slice(clean.lastIndexOf('/') + 1);
+  const dotIndex = fileName.lastIndexOf('.');
+  return dotIndex >= 0 ? fileName.slice(dotIndex + 1).toLowerCase() : '';
 }
 
 function addSystemNotice(body) {
-  const notice = document.createElement("div");
-  notice.className = "system-notice";
+  const notice = document.createElement('div');
+  notice.className = 'system-notice';
   notice.textContent = body;
-  els.chatLog.querySelector(".messages-empty")?.remove();
+  els.chatLog.querySelector('.messages-empty')?.remove();
   els.chatLog.appendChild(notice);
   els.chatLog.scrollTop = els.chatLog.scrollHeight;
 }
 
 function addEmptyNotice(body) {
-  const notice = document.createElement("div");
-  notice.className = "messages-empty";
+  const notice = document.createElement('div');
+  notice.className = 'messages-empty';
   notice.textContent = body;
   els.chatLog.appendChild(notice);
 }
@@ -1987,10 +2046,10 @@ function selectRoom(roomName, options = {}) {
   state.currentRoom = roomName;
   els.activeRoom.textContent = channelLabel(roomName);
   els.roomShortcuts.forEach((button) => {
-    button.classList.toggle("active", button.dataset.room === roomName);
+    button.classList.toggle('active', button.dataset.room === roomName);
   });
   els.roomItems.forEach((item) => {
-    item.classList.toggle("active", item.dataset.roomItem === roomName);
+    item.classList.toggle('active', item.dataset.roomItem === roomName);
   });
   renderRoomListPresence(getParticipants());
   if (shouldLoadHistory && !isConnected()) {
@@ -2001,8 +2060,8 @@ function selectRoom(roomName, options = {}) {
 function syncChatRoomButtons(roomName = state.chatRoom) {
   els.roomChatButtons.forEach((button) => {
     const active = button.dataset.roomChat === roomName;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-pressed", String(active));
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
   });
   // chatRoomLabel removed from HTML
 }
@@ -2027,12 +2086,12 @@ async function closeTheater() {
 
 function resetRoom() {
   state.room = null;
-  state.identity = "";
-  state.focusedScreenId = "";
+  state.identity = '';
+  state.focusedScreenId = '';
   state.activeSpeakerIds = new Set();
-  updateConnection("offline");
+  updateConnection('offline');
   clearMedia();
-  els.screenStage.classList.add("is-hidden");
+  els.screenStage.classList.add('is-hidden');
   void closeTheater();
   renderEmptyState();
   renderRoomListPresence([]);
@@ -2056,26 +2115,28 @@ function updateControls() {
   els.fileButton.disabled = !canChat || state.isJoining;
   if (els.screenToggleButton) {
     els.screenToggleButton.disabled = !canChat;
-    els.screenToggleButton.classList.toggle("active", state.screenDisabledLocal);
-    const demoTitle = state.screenDisabledLocal ? "Show demos locally" : "Hide demos locally";
+    els.screenToggleButton.classList.toggle('active', state.screenDisabledLocal);
+    const demoTitle = state.screenDisabledLocal ? 'Show demos locally' : 'Hide demos locally';
     els.screenToggleButton.title = demoTitle;
-    els.screenToggleButton.setAttribute("aria-label", demoTitle);
-    els.screenToggleButton.setAttribute("aria-pressed", String(state.screenDisabledLocal));
+    els.screenToggleButton.setAttribute('aria-label', demoTitle);
+    els.screenToggleButton.setAttribute('aria-pressed', String(state.screenDisabledLocal));
   }
-  els.micButton.classList.toggle("active", localMic);
-  els.screenButton.classList.toggle("active", localScreen);
-  els.micButton.title = localMic ? "Mic on" : "Mic off";
-  els.micButton.setAttribute("aria-label", els.micButton.title);
-  els.screenButton.title = localScreen ? `Stop sharing (${selectedScreenPreset().label})` : `Share screen (${selectedScreenPreset().label})`;
-  els.screenButton.setAttribute("aria-label", els.screenButton.title);
+  els.micButton.classList.toggle('active', localMic);
+  els.screenButton.classList.toggle('active', localScreen);
+  els.micButton.title = localMic ? 'Mic on' : 'Mic off';
+  els.micButton.setAttribute('aria-label', els.micButton.title);
+  els.screenButton.title = localScreen
+    ? `Stop sharing (${selectedScreenPreset().label})`
+    : `Share screen (${selectedScreenPreset().label})`;
+  els.screenButton.setAttribute('aria-label', els.screenButton.title);
   els.screenQuality.value = state.screenQuality;
   els.fitButton.dataset.fit = state.screenFit;
-  els.fitButton.title = state.screenFit === "contain" ? "Contain screen" : "Fill screen";
-  els.fitButton.setAttribute("aria-label", els.fitButton.title);
+  els.fitButton.title = state.screenFit === 'contain' ? 'Contain screen' : 'Fill screen';
+  els.fitButton.setAttribute('aria-label', els.fitButton.title);
   syncTheaterControls();
-  els.leaveButton.title = "Leave room";
-  els.leaveButton.setAttribute("aria-label", "Leave room");
-  els.captureMode.textContent = "raw mic";
+  els.leaveButton.title = 'Leave room';
+  els.leaveButton.setAttribute('aria-label', 'Leave room');
+  els.captureMode.textContent = 'raw mic';
 }
 
 function setBusy(isBusy) {
@@ -2110,7 +2171,9 @@ function authHeaders(extra = {}) {
 }
 
 function isChatMessage(message) {
-  return Boolean(message && (message.body || (Array.isArray(message.attachments) && message.attachments.length)));
+  return Boolean(
+    message && (message.body || (Array.isArray(message.attachments) && message.attachments.length))
+  );
 }
 
 function formatBytes(bytes) {
@@ -2145,7 +2208,11 @@ function hasLocalScreen() {
 function hasMic(participant) {
   if (!participant) return false;
   for (const publication of participant.trackPublications.values()) {
-    if (publication.source === Track.Source.Microphone && publication.track && !publication.isMuted) {
+    if (
+      publication.source === Track.Source.Microphone &&
+      publication.track &&
+      !publication.isMuted
+    ) {
       return true;
     }
   }
@@ -2153,27 +2220,27 @@ function hasMic(participant) {
 }
 
 function displayName(participant) {
-  if (!participant) return "guest";
-  return participant.name || participant.identity || "guest";
+  if (!participant) return 'guest';
+  return participant.name || participant.identity || 'guest';
 }
 
 function initials(value) {
-  const clean = (value || "?").trim();
+  const clean = (value || '?').trim();
   return clean.slice(0, 2).toUpperCase();
 }
 
 function normalizeAvatarUrl(value) {
-  return typeof value === "string" ? value.trim() : "";
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function telegramAvatarUrl(username) {
-  const clean = (username || "").trim().replace(/^@+/, "");
-  if (!clean) return "";
+  const clean = (username || '').trim().replace(/^@+/, '');
+  if (!clean) return '';
   return `https://t.me/i/userpic/320/${encodeURIComponent(clean)}.jpg`;
 }
 
 function safeJsonParse(value) {
-  if (typeof value !== "string" || !value.trim()) return null;
+  if (typeof value !== 'string' || !value.trim()) return null;
   try {
     return JSON.parse(value);
   } catch {
@@ -2183,14 +2250,15 @@ function safeJsonParse(value) {
 
 function participantAvatarProfile(record = {}) {
   const metadata = safeJsonParse(record.metadata);
-  const attributes = record.attributes && typeof record.attributes === "object" ? record.attributes : null;
+  const attributes =
+    record.attributes && typeof record.attributes === 'object' ? record.attributes : null;
   const username = normalizeAvatarUrl(
     record.username ||
       attributes?.username ||
       attributes?.telegram_username ||
       metadata?.username ||
       metadata?.telegram_username ||
-      ""
+      ''
   );
   const photoUrl = normalizeAvatarUrl(
     record.photo_url ||
@@ -2198,14 +2266,14 @@ function participantAvatarProfile(record = {}) {
       attributes?.photoUrl ||
       metadata?.photo_url ||
       metadata?.photoUrl ||
-      ""
+      ''
   );
   return { username, photoUrl };
 }
 
-function recordAvatar(identity, photoUrl = "", username = "") {
+function recordAvatar(identity, photoUrl = '', username = '') {
   const key = normalizeAvatarUrl(identity);
-  if (!key) return "";
+  if (!key) return '';
   const explicit = normalizeAvatarUrl(photoUrl);
   if (explicit) {
     if (state.avatarByIdentity[key] !== explicit) {
@@ -2220,7 +2288,7 @@ function recordAvatar(identity, photoUrl = "", username = "") {
   return state.avatarByIdentity[key] || fallback;
 }
 
-function avatarUrlForIdentity(identity, username = "") {
+function avatarUrlForIdentity(identity, username = '') {
   const key = normalizeAvatarUrl(identity);
   if (!key) return telegramAvatarUrl(username);
   const cached = state.avatarByIdentity[key];
@@ -2232,14 +2300,14 @@ function avatarUrlForIdentity(identity, username = "") {
 function renderAvatar(container, photoUrl, label) {
   if (!container) return;
   container.replaceChildren();
-  const photo = document.createElement("img");
-  photo.className = "avatar-photo";
-  photo.alt = label || "avatar";
-  photo.loading = "eager";
-  photo.decoding = "async";
-  photo.referrerPolicy = "no-referrer";
+  const photo = document.createElement('img');
+  photo.className = 'avatar-photo';
+  photo.alt = label || 'avatar';
+  photo.loading = 'eager';
+  photo.decoding = 'async';
+  photo.referrerPolicy = 'no-referrer';
   photo.onerror = () => {
-    photo.removeAttribute("src");
+    photo.removeAttribute('src');
     photo.hidden = true;
     fallback.hidden = false;
   };
@@ -2248,8 +2316,8 @@ function renderAvatar(container, photoUrl, label) {
   } else {
     photo.hidden = true;
   }
-  const fallback = document.createElement("span");
-  fallback.className = "avatar-fallback";
+  const fallback = document.createElement('span');
+  fallback.className = 'avatar-fallback';
   fallback.textContent = initials(label);
   if (photoUrl) {
     fallback.hidden = true;
@@ -2268,7 +2336,7 @@ function findPresenceUserByIdentity(identity) {
 }
 
 function participantAvatarUrl(participant) {
-  if (!participant) return "";
+  if (!participant) return '';
   const profile = participantAvatarProfile(participant);
   if (participant.isLocal) {
     return (
@@ -2282,12 +2350,14 @@ function participantAvatarUrl(participant) {
 }
 
 function messageAvatarUrl(message) {
-  if (!message) return "";
+  if (!message) return '';
   return (
     message.photo_url ||
     avatarUrlForIdentity(message.identity, message.username) ||
     telegramAvatarUrl(message.username) ||
-    (message.identity === state.identity ? state.user?.photo_url || telegramAvatarUrl(state.user?.username) : "")
+    (message.identity === state.identity
+      ? state.user?.photo_url || telegramAvatarUrl(state.user?.username)
+      : '')
   );
 }
 
@@ -2295,28 +2365,32 @@ function syncKnownAvatars(records = []) {
   for (const record of records) {
     if (!record) continue;
     const profile = participantAvatarProfile(record);
-    recordAvatar(record.identity, profile.photoUrl || record.photo_url, profile.username || record.username);
+    recordAvatar(
+      record.identity,
+      profile.photoUrl || record.photo_url,
+      profile.username || record.username
+    );
   }
 }
 
-function refreshChatAvatars(identity = "") {
+function refreshChatAvatars(identity = '') {
   const rows = identity
     ? els.chatLog.querySelectorAll(`.message[data-message-identity="${cssEscape(identity)}"]`)
-    : els.chatLog.querySelectorAll(".message[data-message-id]");
+    : els.chatLog.querySelectorAll('.message[data-message-id]');
   for (const row of rows) {
     const messageId = row.dataset.messageId;
     const message = messageId ? state.chatMessagesById.get(messageId) : null;
     if (!message) continue;
-    const avatar = row.querySelector(".message-avatar");
+    const avatar = row.querySelector('.message-avatar');
     if (avatar) {
-      renderAvatar(avatar, messageAvatarUrl(message), message.author || "Guest");
+      renderAvatar(avatar, messageAvatarUrl(message), message.author || 'Guest');
     }
   }
 }
 
 function setLocalDemoDisabled(disabled) {
   state.screenDisabledLocal = Boolean(disabled);
-  localStorage.setItem("debilbi:screenDisabledLocal", state.screenDisabledLocal ? "1" : "0");
+  localStorage.setItem('debilbi:screenDisabledLocal', state.screenDisabledLocal ? '1' : '0');
   renderRoom();
 }
 
@@ -2327,7 +2401,7 @@ function syncRemoteScreenSubscriptions(participants = getParticipants()) {
     if (!participant || participant.isLocal) continue;
     for (const publication of participant.trackPublications.values()) {
       if (publication.source !== Track.Source.ScreenShare) continue;
-      if (typeof publication.setSubscribed !== "function") continue;
+      if (typeof publication.setSubscribed !== 'function') continue;
       if (publication.isSubscribed === shouldSubscribe) continue;
       try {
         publication.setSubscribed(shouldSubscribe);
@@ -2347,17 +2421,17 @@ function collectVisibleScreenShares(participants = getParticipants()) {
 function syncTheaterControls() {
   if (!els.fullscreenButton || !els.closeTheaterButton) return;
   const theaterFullscreen = document.fullscreenElement === els.theater;
-  els.fullscreenButton.dataset.fullscreen = theaterFullscreen ? "true" : "false";
-  const fullscreenLabel = theaterFullscreen ? "Exit fullscreen" : "Enter fullscreen";
+  els.fullscreenButton.dataset.fullscreen = theaterFullscreen ? 'true' : 'false';
+  const fullscreenLabel = theaterFullscreen ? 'Exit fullscreen' : 'Enter fullscreen';
   els.fullscreenButton.title = fullscreenLabel;
-  els.fullscreenButton.setAttribute("aria-label", fullscreenLabel);
-  els.closeTheaterButton.title = "Close demo";
-  els.closeTheaterButton.setAttribute("aria-label", "Close demo");
+  els.fullscreenButton.setAttribute('aria-label', fullscreenLabel);
+  els.closeTheaterButton.title = 'Close demo';
+  els.closeTheaterButton.setAttribute('aria-label', 'Close demo');
 }
 
 function iconSvg(name) {
   switch (name) {
-    case "mic":
+    case 'mic':
       return `
         <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M12 14a3 3 0 0 0 3-3V8a3 3 0 1 0 -6 0v3a3 3 0 0 0 3 3Z"/>
@@ -2365,7 +2439,7 @@ function iconSvg(name) {
           <path d="M12 18v3"/>
         </svg>
       `;
-    case "muted":
+    case 'muted':
       return `
         <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 9V8a3 3 0 1 1 6 0v3"/>
@@ -2375,7 +2449,7 @@ function iconSvg(name) {
           <path d="M4 4l16 16"/>
         </svg>
       `;
-    case "timer":
+    case 'timer':
       return `
         <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="13" r="7"/>
@@ -2384,7 +2458,7 @@ function iconSvg(name) {
           <path d="M9.5 3.5h5"/>
         </svg>
       `;
-    case "screen":
+    case 'screen':
       return `
         <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true">
           <rect x="4" y="5" width="16" height="10" rx="2"/>
@@ -2394,6 +2468,6 @@ function iconSvg(name) {
         </svg>
       `;
     default:
-      return "";
+      return '';
   }
 }

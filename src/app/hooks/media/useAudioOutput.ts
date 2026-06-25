@@ -18,7 +18,7 @@ const normalizeSinkId = (deviceId?: string) =>
 const applySinkId = async (targetEl: HTMLMediaElement, deviceId?: string) => {
   if (!canRouteMediaOutput()) return;
 
-  const setSinkId = (targetEl as SinkableMediaElement).setSinkId;
+  const { setSinkId } = targetEl as SinkableMediaElement;
   if (!setSinkId) return;
 
   await setSinkId.call(targetEl, normalizeSinkId(deviceId));
@@ -54,7 +54,10 @@ export const useAudioOutputDevices = () => {
       setDevices(
         allDevices
           .filter(
-            (device) => device.kind === 'audiooutput' && device.deviceId !== 'default' && device.deviceId !== ''
+            (device) =>
+              device.kind === 'audiooutput' &&
+              device.deviceId !== 'default' &&
+              device.deviceId !== ''
           )
           .map(({ deviceId, groupId, label }) => ({ deviceId, groupId, label }))
       );
@@ -64,7 +67,7 @@ export const useAudioOutputDevices = () => {
   }, []);
 
   useEffect(() => {
-    void refresh();
+    refresh().catch(() => undefined);
 
     const mediaDevices = typeof navigator !== 'undefined' ? navigator.mediaDevices : undefined;
     if (!mediaDevices?.addEventListener) return undefined;
@@ -117,7 +120,7 @@ export const useMediaOutputSink = (
       }
     };
 
-    void route();
+    route().catch(() => undefined);
 
     return () => {
       cancelled = true;
@@ -150,13 +153,11 @@ export const useDocumentAudioOutputSink = (doc: Document | undefined, deviceId?:
       if (node.nodeType === Node.ELEMENT_NODE) {
         const element = node as Element;
         if (element.tagName === 'AUDIO') {
-          void routeAudioElements([element as HTMLAudioElement], deviceId).catch(
-            () => undefined
-          );
+          routeAudioElements([element as HTMLAudioElement], deviceId).catch(() => undefined);
           return;
         }
 
-        void routeAudioElements(Array.from(element.querySelectorAll('audio')), deviceId).catch(
+        routeAudioElements(Array.from(element.querySelectorAll('audio')), deviceId).catch(
           () => undefined
         );
       }
@@ -165,7 +166,7 @@ export const useDocumentAudioOutputSink = (doc: Document | undefined, deviceId?:
     const root = doc.body ?? doc.documentElement;
     if (!root) return undefined;
 
-    void routeAudioElementsInRoot(root).catch((err) => {
+    routeAudioElementsInRoot(root).catch((err) => {
       if (!cancelled) {
         setError(err instanceof Error ? err.message : 'Unable to route audio output.');
       }

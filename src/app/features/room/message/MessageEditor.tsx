@@ -22,6 +22,10 @@ import {
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
 import { IContent, IMentions, MatrixEvent, RelationType, Room } from 'matrix-js-sdk';
+import type {
+  RoomMessageEventContent,
+  RoomMessageTextEventContent,
+} from 'matrix-js-sdk/lib/@types/events';
 import { isKeyHotkey } from 'is-hotkey';
 import {
   AUTOCOMPLETE_PREFIXES,
@@ -80,10 +84,12 @@ export const MessageEditor = as<'div', MessageEditorProps>(
       string | undefined,
       IMentions | undefined
     ] => {
-      const evtId = mEvent.getId()!;
-      const evtTimeline = room.getTimelineForEvent(evtId);
+      const evtId = mEvent.getId();
+      const evtTimeline = evtId ? room.getTimelineForEvent(evtId) : undefined;
       const editedEvent =
-        evtTimeline && getEditedEvent(evtId, mEvent, evtTimeline.getTimelineSet());
+        evtId && evtTimeline
+          ? getEditedEvent(evtId, mEvent, evtTimeline.getTimelineSet())
+          : undefined;
 
       const content: IContent = editedEvent?.getContent()['m.new_content'] ?? mEvent.getContent();
       const { body, formatted_body: customHtml }: Record<string, unknown> = content;
@@ -111,6 +117,9 @@ export const MessageEditor = as<'div', MessageEditorProps>(
         const [prevBody, prevCustomHtml, prevMentions] = getPrevBodyAndFormattedBody();
 
         if (plainText === '') return undefined;
+        const eventId = mEvent.getId();
+        if (!eventId) return undefined;
+
         if (prevBody) {
           if (prevCustomHtml && trimReplyFromFormattedBody(prevCustomHtml) === customHtml) {
             return undefined;
@@ -124,8 +133,8 @@ export const MessageEditor = as<'div', MessageEditorProps>(
           }
         }
 
-        const newContent: IContent = {
-          msgtype: mEvent.getContent().msgtype,
+        const newContent: RoomMessageTextEventContent = {
+          msgtype: mEvent.getContent().msgtype as RoomMessageTextEventContent['msgtype'],
           body: plainText,
         };
 
@@ -143,12 +152,12 @@ export const MessageEditor = as<'div', MessageEditorProps>(
           newContent.formatted_body = customHtml;
         }
 
-        const content: IContent = {
+        const content: RoomMessageEventContent = {
           ...newContent,
           body: `* ${plainText}`,
           'm.new_content': newContent,
           'm.relates_to': {
-            event_id: mEvent.getId(),
+            event_id: eventId,
             rel_type: RelationType.Replace,
           },
         };

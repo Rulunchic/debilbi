@@ -1,4 +1,4 @@
-import React, { MouseEventHandler, useMemo, useState } from 'react';
+import React, { MouseEventHandler, ReactNode, useMemo, useState } from 'react';
 import FocusTrap from 'focus-trap-react';
 import {
   Box,
@@ -47,11 +47,11 @@ export function AudioOutput() {
     : getDeviceLabel(
         selectedDevice?.deviceId,
         selectedDevice?.label ?? '',
-        selectedIndex >= 0 ? selectedIndex : 0
+        Math.max(selectedIndex, 0)
       );
 
   const handleMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
-    void refresh();
+    refresh().catch(() => undefined);
     setMenuCords(evt.currentTarget.getBoundingClientRect());
   };
 
@@ -60,26 +60,35 @@ export function AudioOutput() {
     setMenuCords(undefined);
   };
 
-  const description = !supported ? (
-    <Text as="span" style={{ color: color.Critical.Main }} size="T200">
-      This browser cannot reroute media to a separate output device. The desktop build is the
-      reliable path for Discord-style audio separation.
-    </Text>
-  ) : savedDeviceUnavailable ? (
-    <Text as="span" style={{ color: color.Warning.Main }} size="T200">
-      The saved output device is unavailable right now. Audio will fall back to the system output
-      until you pick another device.
-    </Text>
-  ) : preferredAudioOutputDeviceId ? (
-    <Text as="span" size="T200">
-      Call audio and playback sounds will use {selectedLabel}.
-    </Text>
-  ) : (
-    <Text as="span" size="T200">
-      Call audio and playback sounds use the system default output. Pick headphones or another
-      sink if you are sharing your screen.
-    </Text>
-  );
+  let description: ReactNode;
+  if (!supported) {
+    description = (
+      <Text as="span" style={{ color: color.Critical.Main }} size="T200">
+        This browser cannot reroute media to a separate output device. The desktop build is the
+        reliable path for Discord-style audio separation.
+      </Text>
+    );
+  } else if (savedDeviceUnavailable) {
+    description = (
+      <Text as="span" style={{ color: color.Warning.Main }} size="T200">
+        The saved output device is unavailable right now. Audio will fall back to the system output
+        until you pick another device.
+      </Text>
+    );
+  } else if (preferredAudioOutputDeviceId) {
+    description = (
+      <Text as="span" size="T200">
+        Call audio and playback sounds will use {selectedLabel}.
+      </Text>
+    );
+  } else {
+    description = (
+      <Text as="span" size="T200">
+        Call audio and playback sounds use the system default output. Pick headphones or another
+        sink if you are sharing your screen.
+      </Text>
+    );
+  }
 
   return (
     <Box direction="Column" gap="100">
@@ -120,7 +129,7 @@ export function AudioOutput() {
         align="End"
         content={
           <FocusTrap
-              focusTrapOptions={{
+            focusTrapOptions={{
               initialFocus: false,
               onDeactivate: () => setMenuCords(undefined),
               clickOutsideDeactivates: true,
@@ -156,7 +165,9 @@ export function AudioOutput() {
                       radii="300"
                       onClick={() => handleSelect(device.deviceId)}
                     >
-                      <Text size="T300">{getDeviceLabel(device.deviceId, device.label, index)}</Text>
+                      <Text size="T300">
+                        {getDeviceLabel(device.deviceId, device.label, index)}
+                      </Text>
                     </MenuItem>
                   );
                 })}
