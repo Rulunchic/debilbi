@@ -339,6 +339,7 @@ els.lightbox?.addEventListener("click", (e) => {
   if (e.target === els.lightbox || e.target === els.lightboxInner) closeLightbox();
 });
 els.lightboxClose?.addEventListener("click", closeLightbox);
+els.lightboxVideo?.addEventListener("click", toggleLightboxVideo);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && els.lightbox && !els.lightbox.hidden) closeLightbox();
 });
@@ -881,6 +882,14 @@ function openLightbox(url, alt, isVideo = false) {
   }
   els.lightbox.hidden = false;
   document.body.style.overflow = "hidden";
+}
+
+function toggleLightboxVideo() {
+  if (els.lightboxVideo.paused) {
+    els.lightboxVideo.play().catch(() => {});
+  } else {
+    els.lightboxVideo.pause();
+  }
 }
 
 function closeLightbox() {
@@ -1829,17 +1838,24 @@ function renderMessageAttachments(attachments) {
     }
 
     if (kind === "video") {
-      const videoWrap = document.createElement("button");
-      videoWrap.type = "button";
-      videoWrap.className = "video-preview-wrap";
-      const player = document.createElement("video");
-      player.preload = "metadata";
-      player.src = attachment.url;
-      player.playsInline = true;
-      player.muted = true;
-      videoWrap.appendChild(player);
-      videoWrap.addEventListener("click", () => openLightbox(attachment.url, attachment.name || "", true));
-      wrap.appendChild(videoWrap);
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = "message-attachment media-attachment video-attachment";
+      const icon = document.createElement("span");
+      icon.className = "attachment-icon";
+      icon.textContent = "▶";
+      const main = document.createElement("span");
+      main.className = "attachment-main";
+      const namEl = document.createElement("span");
+      namEl.className = "attachment-name";
+      namEl.textContent = attachment.name || "video";
+      const meta = document.createElement("span");
+      meta.className = "attachment-meta";
+      meta.textContent = `${attachment.type || "video"} · ${formatBytes(attachment.size || 0)}`;
+      main.append(namEl, meta);
+      card.append(icon, main);
+      card.addEventListener("click", () => openLightbox(attachment.url, attachment.name || "", true));
+      wrap.appendChild(card);
       continue;
     }
 
