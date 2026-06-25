@@ -1,54 +1,33 @@
-# Debilbi
+# Debilbi — Agent Rules
 
-Matrix-powered voice and chat client. Fork of Cinny.
+## Branch Rules
+- `main` — production. No direct pushes
+- Work via feature branches: `feature/<what-we-do>`
+- Create Pull Request to merge into `main`
 
-- **GitHub**: https://github.com/Rulunchic/debilbi
-- **Clone**: `git clone https://github.com/Rulunchic/debilbi.git`
-- **Branch `main`** — production. Push to `main` triggers GitHub Actions deploy to server.
-
-## Commands
-
+## Before Commit
 ```bash
-npm ci              # install dependencies (always use ci, not install)
-npm start           # dev server at 0.0.0.0:8080
-npm run build       # build to dist/
-npm run lint        # eslint + prettier check
-npm run typecheck   # TypeScript check
+npm run lint
+npm run typecheck
+npm run build
 ```
 
-## Workflow
-
-1. Branch from `main`: `git checkout -b feature/my-feature`
-2. Make changes
-3. Verify: `npm run lint && npm run typecheck && npm run build`
-4. Commit: `git add . && git commit -m "feat: description"`
-5. Push: `git push origin feature/my-feature`
-6. Open Pull Request on GitHub to `main`
-
-Husky runs eslint+prettier on commit via `lint-staged`.
-
-**Never push directly to `main`**. Branch + PR only.
-
-After PR merge by owner (`Rulunchic`), deploy runs automatically via GitHub Actions.
-
-## Project structure
-
+## Commit Convention
 ```
-debilbi/
-├── src/                  # React/TypeScript (Cinny fork)
-├── public/               # Static assets
-├── scripts/              # Build scripts
-├── contrib/              # nginx/caddy config examples
-├── .github/workflows/    # CI/CD (deploy.yml)
-├── .husky/               # Git hooks
-├── vite.config.js        # Vite config
-├── package.json          # Dependencies and scripts
-├── Dockerfile            # Docker build
-└── config.json           # Matrix homeserver config
+feat: what was done
+fix: what was fixed
+chore: maintenance task
+docs: documentation
 ```
 
-## Constraints
+## CI/CD
+- GitHub Actions builds and deploys on push to `main`
+- Deploy target: `/opt/debilbi-client/` via rsync over SSH
+- Docker build available via `Dockerfile`
 
-- No SSH deploy keys — cannot trigger deploy workflow
-- Deploy happens only after PR merge to `main` (owner does merge)
-- Allowed: clone, create branches, commit, push, open PRs, review code
+## Tech Stack
+- React 18, TypeScript, Vite
+- matrix-js-sdk (Matrix client)
+- vanilla-extract (CSS-in-JS)
+- Jotai + Immer (state)
+- Cinny fork (Matrix chat UI)

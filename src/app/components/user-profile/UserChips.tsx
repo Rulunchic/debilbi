@@ -239,7 +239,6 @@ export function MutualRoomsChip({ userId }: { userId: string }) {
   const mutualRoomSupported = useMutualRoomsSupport();
   const mutualRoomUnstable = useUnstableMutualRoomsSupport();
   const mutualRoomsState = useMutualRooms(userId);
-  console.log(mutualRoomSupported, mutualRoomsState);
   const { navigateRoom, navigateSpace } = useRoomNavigate();
   const closeUserRoomProfile = useCloseUserRoomProfile();
   const directs = useDirectRooms();

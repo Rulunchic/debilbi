@@ -60,7 +60,6 @@ async function deriveKeys(salt, iterations, password) {
   }
 
   const now = new Date();
-  console.log(`E2e import/export: deriveKeys took ${(now - start)}ms`);
 
   const aesKey = keybits.slice(0, 32);
   const hmacKey = keybits.slice(32);
