@@ -1659,14 +1659,7 @@ label {
   margin-top: 0;
 }
 
-.message.grouped .message-avatar {
-  width: 0;
-  height: 0;
-  overflow: hidden;
-  flex: 0;
-  margin: 0;
-  padding: 0;
-}
+.message.grouped .message-avatar { visibility: hidden; }
 .message.grouped .message-meta { display: none; }
 
 /* ── Lightbox ─────────────────────────────────────────────────────── */
@@ -1703,7 +1696,6 @@ label {
   border-radius: var(--r400);
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
   user-select: none;
-  display: block;
 }
 
 .lightbox-video {
@@ -1711,9 +1703,11 @@ label {
   max-height: 100%;
   border-radius: var(--r400);
   background: #000;
-  display: block;
   cursor: pointer;
 }
+
+.lightbox-video[hidden],
+.lightbox-img[hidden] { display: none; }
 
 .lightbox-close {
   position: fixed;
