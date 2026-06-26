@@ -1923,7 +1923,7 @@ label {
 }
 
 .message.grouped .message-avatar {
-  visibility: hidden;
+  display: none;
 }
 .message.grouped .message-meta {
   display: none;
