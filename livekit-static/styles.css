@@ -1920,7 +1920,7 @@ label {
 }
 
 .message.grouped .message-avatar {
-  display: none;
+  visibility: hidden;
 }
 .message.grouped .message-meta {
   display: none;
