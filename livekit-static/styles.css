@@ -1257,9 +1257,10 @@ label {
 }
 
 .message {
-  display: flex;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  column-gap: 10px;
   align-items: flex-start;
-  gap: 10px;
   width: 100%;
   margin: 0;
   border-radius: 0 var(--r400) var(--r400) 0;
@@ -1277,7 +1278,8 @@ label {
 }
 
 .message-avatar {
-  flex: 0 0 34px;
+  grid-column: 1;
+  grid-row: 1;
   width: 34px;
   height: 34px;
   margin-top: 2px;
@@ -1286,9 +1288,10 @@ label {
 }
 
 .message-content {
+  grid-column: 2;
   display: flex;
-  flex: 1 1 auto;
   flex-direction: column;
+  min-width: 0;
   padding-top: 0;
 }
 
