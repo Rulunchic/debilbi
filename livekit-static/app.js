@@ -182,7 +182,14 @@ const els = {
   lightbox: document.querySelector('#lightbox'),
   lightboxInner: document.querySelector('#lightboxInner'),
   lightboxImg: document.querySelector('#lightboxImg'),
+  lightboxVideoShell: document.querySelector('#lightboxVideoShell'),
   lightboxVideo: document.querySelector('#lightboxVideo'),
+  lightboxVideoOverlay: document.querySelector('#lightboxVideoOverlay'),
+  lightboxVideoPlay: document.querySelector('#lightboxVideoPlay'),
+  lightboxVideoSeek: document.querySelector('#lightboxVideoSeek'),
+  lightboxVideoTime: document.querySelector('#lightboxVideoTime'),
+  lightboxVideoMute: document.querySelector('#lightboxVideoMute'),
+  lightboxHint: document.querySelector('#lightboxHint'),
   lightboxClose: document.querySelector('#lightboxClose'),
 };
 
@@ -356,8 +363,50 @@ els.lightboxImg?.addEventListener('pointerup', endLightboxDrag);
 els.lightboxImg?.addEventListener('pointercancel', endLightboxDrag);
 els.lightboxImg?.addEventListener('lostpointercapture', endLightboxDrag);
 els.lightboxImg?.addEventListener('dblclick', toggleLightboxZoom);
+els.lightboxVideo?.addEventListener('click', toggleLightboxVideoPlayback);
+els.lightboxVideoOverlay?.addEventListener('click', toggleLightboxVideoPlayback);
+els.lightboxVideoPlay?.addEventListener('click', toggleLightboxVideoPlayback);
+els.lightboxVideoMute?.addEventListener('click', toggleLightboxVideoMute);
+els.lightboxVideoSeek?.addEventListener('input', handleLightboxVideoSeekInput);
+els.lightboxVideoSeek?.addEventListener('pointerdown', () => {
+  _lbVideoSeeking = true;
+});
+els.lightboxVideoSeek?.addEventListener('pointerup', () => {
+  _lbVideoSeeking = false;
+  syncLightboxVideoControls();
+});
+els.lightboxVideoSeek?.addEventListener('pointercancel', () => {
+  _lbVideoSeeking = false;
+  syncLightboxVideoControls();
+});
+els.lightboxVideo?.addEventListener('loadedmetadata', syncLightboxVideoControls);
+els.lightboxVideo?.addEventListener('durationchange', syncLightboxVideoControls);
+els.lightboxVideo?.addEventListener('timeupdate', syncLightboxVideoControls);
+els.lightboxVideo?.addEventListener('play', syncLightboxVideoControls);
+els.lightboxVideo?.addEventListener('pause', syncLightboxVideoControls);
+els.lightboxVideo?.addEventListener('ended', syncLightboxVideoControls);
+els.lightboxVideo?.addEventListener('volumechange', syncLightboxVideoControls);
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && els.lightbox && !els.lightbox.hidden) closeLightbox();
+  if (e.key === 'Escape' && els.lightbox && !els.lightbox.hidden) {
+    closeLightbox();
+    return;
+  }
+  if (!isVideoLightboxOpen()) return;
+  const target = e.target;
+  if (target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+  if (e.key === ' ' || e.key === 'k') {
+    e.preventDefault();
+    toggleLightboxVideoPlayback();
+  } else if (e.key === 'ArrowLeft') {
+    e.preventDefault();
+    seekLightboxVideo(-5);
+  } else if (e.key === 'ArrowRight') {
+    e.preventDefault();
+    seekLightboxVideo(5);
+  } else if (e.key === 'm') {
+    e.preventDefault();
+    toggleLightboxVideoMute();
+  }
 });
 els.lightbox?.addEventListener(
   'wheel',
@@ -888,6 +937,7 @@ function renderVoiceStrip(participants) {
 let _lbZoom = 1;
 let _lbPan = { x: 0, y: 0 };
 let _lbDrag = null;
+let _lbVideoSeeking = false;
 const _LB_ZOOM_MIN = 1,
   _LB_ZOOM_MAX = 8;
 
@@ -982,22 +1032,160 @@ function toggleLightboxZoom(event) {
   }
 }
 
+function isVideoLightboxOpen() {
+  return Boolean(
+    els.lightboxVideoShell &&
+      !els.lightboxVideoShell.hidden &&
+      els.lightboxVideo &&
+      !els.lightboxVideo.hidden
+  );
+}
+
+function setLightboxHint(text) {
+  if (els.lightboxHint) {
+    els.lightboxHint.textContent = text;
+  }
+}
+
+function setLightboxMode(mode) {
+  const isVideo = mode === 'video';
+  if (els.lightboxInner) els.lightboxInner.hidden = isVideo;
+  if (els.lightboxVideoShell) els.lightboxVideoShell.hidden = !isVideo;
+  if (els.lightboxHint) {
+    els.lightboxHint.hidden = isVideo;
+    if (!isVideo) {
+      setLightboxHint('Scroll to zoom · Drag to pan · Double-click to reset · Esc to close');
+    }
+  }
+}
+
+function formatLightboxTime(seconds) {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const whole = Math.floor(seconds);
+  const hours = Math.floor(whole / 3600);
+  const minutes = Math.floor((whole % 3600) / 60);
+  const secs = whole % 60;
+  const base = `${minutes}:${String(secs).padStart(2, '0')}`;
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}` : base;
+}
+
+function syncLightboxVideoControls() {
+  const video = els.lightboxVideo;
+  if (!video || video.hidden) return;
+  const playing = !video.paused && !video.ended;
+  const muted = video.muted || video.volume === 0;
+  const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+
+  if (els.lightboxVideoShell) {
+    els.lightboxVideoShell.classList.toggle('is-playing', playing);
+    els.lightboxVideoShell.classList.toggle('is-paused', !playing);
+  }
+
+  if (els.lightboxVideoPlay) {
+    els.lightboxVideoPlay.innerHTML = iconSvg(playing ? 'pause' : 'play');
+    els.lightboxVideoPlay.setAttribute('aria-label', playing ? 'Pause video' : 'Play video');
+  }
+
+  if (els.lightboxVideoOverlay) {
+    els.lightboxVideoOverlay.innerHTML = iconSvg(playing ? 'pause' : 'play');
+    els.lightboxVideoOverlay.setAttribute('aria-label', playing ? 'Pause video' : 'Play video');
+  }
+
+  if (els.lightboxVideoMute) {
+    els.lightboxVideoMute.innerHTML = iconSvg(muted ? 'mute' : 'volume');
+    els.lightboxVideoMute.setAttribute('aria-label', muted ? 'Unmute video' : 'Mute video');
+  }
+
+  if (els.lightboxVideoSeek) {
+    els.lightboxVideoSeek.disabled = !duration;
+    if (duration && !_lbVideoSeeking) {
+      els.lightboxVideoSeek.value = String(Math.round((video.currentTime / duration) * 1000));
+    }
+  }
+
+  if (els.lightboxVideoTime) {
+    els.lightboxVideoTime.textContent = duration
+      ? `${formatLightboxTime(video.currentTime)} / ${formatLightboxTime(duration)}`
+      : `${formatLightboxTime(video.currentTime)} / 0:00`;
+  }
+}
+
+function handleLightboxVideoSeekInput() {
+  const video = els.lightboxVideo;
+  if (!video || video.hidden) return;
+  const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+  if (!duration) return;
+  const ratio = Number(els.lightboxVideoSeek?.value || 0) / 1000;
+  video.currentTime = duration * ratio;
+  syncLightboxVideoControls();
+}
+
+function toggleLightboxVideoPlayback() {
+  const video = els.lightboxVideo;
+  if (!video || video.hidden) return;
+  if (video.paused || video.ended) {
+    void video.play().catch(() => {});
+  } else {
+    video.pause();
+  }
+  syncLightboxVideoControls();
+}
+
+function toggleLightboxVideoMute() {
+  const video = els.lightboxVideo;
+  if (!video || video.hidden) return;
+  video.muted = !video.muted;
+  if (!video.muted && video.volume === 0) {
+    video.volume = 1;
+  }
+  syncLightboxVideoControls();
+}
+
+function seekLightboxVideo(offsetSeconds) {
+  const video = els.lightboxVideo;
+  if (!video || video.hidden) return;
+  const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0;
+  if (!duration) return;
+  video.currentTime = Math.max(0, Math.min(duration, video.currentTime + offsetSeconds));
+  syncLightboxVideoControls();
+}
+
 function openLightbox(url, alt, isVideo = false) {
   if (!els.lightbox) return;
   resetLightboxTransform();
   if (isVideo) {
-    els.lightboxImg.hidden = true;
-    els.lightboxImg.removeAttribute('src');
-    els.lightboxVideo.src = url;
-    els.lightboxVideo.hidden = false;
-    els.lightboxVideo.play().catch(() => {});
+    setLightboxMode('video');
+    if (els.lightboxImg) {
+      els.lightboxImg.hidden = true;
+      els.lightboxImg.removeAttribute('src');
+    }
+    if (els.lightboxVideo) {
+      els.lightboxVideo.hidden = false;
+      els.lightboxVideo.pause();
+      els.lightboxVideo.removeAttribute('src');
+      els.lightboxVideo.load?.();
+      els.lightboxVideo.src = url;
+      els.lightboxVideo.currentTime = 0;
+      els.lightboxVideo.muted = false;
+      els.lightboxVideo.playsInline = true;
+      els.lightboxVideo.controls = false;
+      void els.lightboxVideo.play().catch(() => {});
+      syncLightboxVideoControls();
+    }
   } else {
-    els.lightboxVideo.hidden = true;
-    els.lightboxVideo.pause?.();
-    els.lightboxVideo.removeAttribute('src');
-    els.lightboxImg.src = url;
-    els.lightboxImg.alt = alt || '';
-    els.lightboxImg.hidden = false;
+    setLightboxMode('image');
+    if (els.lightboxVideo) {
+      _lbVideoSeeking = false;
+      els.lightboxVideo.hidden = true;
+      els.lightboxVideo.pause?.();
+      els.lightboxVideo.removeAttribute('src');
+      els.lightboxVideo.load?.();
+    }
+    if (els.lightboxImg) {
+      els.lightboxImg.src = url;
+      els.lightboxImg.alt = alt || '';
+      els.lightboxImg.hidden = false;
+    }
   }
   applyLightboxTransform();
   els.lightbox.hidden = false;
@@ -1007,9 +1195,23 @@ function openLightbox(url, alt, isVideo = false) {
 function closeLightbox() {
   if (!els.lightbox) return;
   els.lightbox.hidden = true;
-  els.lightboxImg.removeAttribute('src');
-  els.lightboxVideo.pause?.();
-  els.lightboxVideo.removeAttribute('src');
+  setLightboxHint('Scroll to zoom · Drag to pan · Click outside to close');
+  if (els.lightboxHint) els.lightboxHint.hidden = false;
+  if (els.lightboxImg) {
+    els.lightboxImg.hidden = true;
+    els.lightboxImg.removeAttribute('src');
+  }
+  if (els.lightboxVideo) {
+    _lbVideoSeeking = false;
+    els.lightboxVideo.pause?.();
+    els.lightboxVideo.removeAttribute('src');
+    els.lightboxVideo.load?.();
+    els.lightboxVideo.hidden = true;
+  }
+  if (els.lightboxVideoShell) {
+    els.lightboxVideoShell.hidden = true;
+    els.lightboxVideoShell.classList.remove('is-playing', 'is-paused');
+  }
   document.body.style.overflow = '';
   resetLightboxTransform();
 }
@@ -1985,6 +2187,29 @@ function renderMessageAttachments(attachments) {
     }
 
     if (kind === 'video') {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'video-attachment';
+      card.title = attachment.name || 'video';
+      card.setAttribute('aria-label', `Open video ${attachment.name || 'attachment'}`);
+      const player = document.createElement('video');
+      player.className = 'video-attachment-preview attachment-video';
+      player.playsInline = true;
+      player.preload = 'metadata';
+      player.muted = true;
+      player.controls = false;
+      player.tabIndex = -1;
+      player.setAttribute('aria-hidden', 'true');
+      player.src = attachment.url;
+      card.append(player);
+      card.addEventListener('click', () => {
+        openLightbox(attachment.url, attachment.name || '', true);
+      });
+      wrap.appendChild(card);
+      continue;
+    }
+
+    if (kind === 'video') {
       const card = document.createElement('article');
       card.className = 'message-attachment media-attachment video-attachment';
       const icon = document.createElement('span');
@@ -2569,6 +2794,35 @@ function iconSvg(name) {
           <path d="M12 15v4"/>
           <path d="M8 19h8"/>
           <path d="M8 9h8"/>
+        </svg>
+      `;
+    case 'play':
+      return `
+        <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true" style="fill: currentColor; stroke: none;">
+          <path d="M8 6l10 6-10 6V6z"/>
+        </svg>
+      `;
+    case 'pause':
+      return `
+        <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true" style="fill: currentColor; stroke: none;">
+          <rect x="7" y="6" width="3" height="12" rx="0.75"/>
+          <rect x="14" y="6" width="3" height="12" rx="0.75"/>
+        </svg>
+      `;
+    case 'volume':
+      return `
+        <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 10v4h3l4 4V6L8 10H5z"/>
+          <path d="M16 9a3 3 0 0 1 0 6"/>
+          <path d="M18.5 6.5a6 6 0 0 1 0 11"/>
+        </svg>
+      `;
+    case 'mute':
+      return `
+        <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 10v4h3l4 4V6L8 10H5z"/>
+          <path d="M15 9l5 6"/>
+          <path d="M20 9l-5 6"/>
         </svg>
       `;
     default:

@@ -1253,16 +1253,16 @@ label {
   gap: 0;
   min-height: 0;
   overflow: auto;
-  padding: 10px 0 30px;
+  padding: 8px 0 18px;
 }
 
 .message {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   width: 100%;
   margin: 0;
   border-radius: 0 var(--r400) var(--r400) 0;
-  padding: 2px 10px 2px 18px;
+  padding: 1px 10px 1px 18px;
   transition: background 80ms;
 }
 
@@ -1279,7 +1279,7 @@ label {
   flex: 0 0 34px;
   width: 34px;
   height: 34px;
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 12px;
   border-radius: 50%;
 }
@@ -1288,14 +1288,14 @@ label {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  padding-top: 1px;
+  padding-top: 0;
 }
 
 .message-meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 20px;
+  min-height: 18px;
 }
 
 .message-meta strong {
@@ -1312,19 +1312,19 @@ label {
   overflow-wrap: anywhere;
   font-family: 'Nunito', Arial, sans-serif;
   color: var(--text);
-  font-size: 15px;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 1.28;
 }
 
 .message p + p {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* ── Attachments ──────────────────────────────────────────────────── */
 .message-attachments {
   display: grid;
-  gap: 4px;
-  margin-top: 3px;
+  gap: 3px;
+  margin-top: 2px;
 }
 
 .message-attachment {
@@ -1443,6 +1443,56 @@ label {
 }
 .attachment-audio {
   height: 38px;
+}
+
+.video-attachment {
+  position: relative;
+  display: block;
+  width: fit-content;
+  max-width: min(560px, 100%);
+  border: 0;
+  border-radius: var(--r400);
+  overflow: hidden;
+  background: #000;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.video-attachment:hover {
+  transform: translateY(-1px);
+  opacity: 0.98;
+}
+
+.video-attachment::after {
+  content: '▶';
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.58);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.24);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.video-attachment-preview {
+  display: block;
+  width: auto;
+  max-width: min(560px, 100%);
+  max-height: 320px;
+  object-fit: contain;
+  pointer-events: none;
+  background: #000;
 }
 
 /* System / empty notices */
@@ -1880,11 +1930,10 @@ label {
   position: fixed;
   inset: 0;
   z-index: 300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   background: rgba(0, 0, 0, 0.9);
-  padding: 60px 24px 24px;
+  padding: 56px 24px 24px;
   cursor: zoom-out;
   overflow: hidden;
 }
@@ -1903,6 +1952,7 @@ label {
   transform-origin: center center;
   cursor: default;
   touch-action: none;
+  grid-area: 1 / 1;
 }
 
 .lightbox-img {
@@ -1915,16 +1965,114 @@ label {
 }
 
 .lightbox-video {
+  display: block;
+  width: 100%;
   max-width: 100%;
-  max-height: 100%;
+  max-height: calc(100vh - 180px);
   border-radius: var(--r400);
   background: #000;
   cursor: default;
+  object-fit: contain;
 }
 
 .lightbox-video[hidden],
 .lightbox-img[hidden] {
   display: none;
+}
+
+.lightbox-video-shell {
+  display: grid;
+  gap: 12px;
+  width: min(92vw, 960px);
+  justify-items: stretch;
+  align-items: start;
+  grid-area: 1 / 1;
+}
+
+.lightbox-video-stage {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r500);
+  background: #000;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+}
+
+.lightbox-video-overlay {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 8px 24px rgba(0, 0, 0, 0.35);
+  color: #fff;
+  cursor: pointer;
+  padding: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, background 120ms ease;
+}
+
+.lightbox-video-shell.is-paused .lightbox-video-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.lightbox-video-controls {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px;
+}
+
+.lightbox-media-button {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  color: #fff;
+  padding: 0;
+  transition: background 100ms ease, box-shadow 100ms ease;
+}
+
+.lightbox-media-button:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.lightbox-media-button .status-icon {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.8;
+}
+
+.lightbox-video-overlay .status-icon {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.8;
+}
+
+.lightbox-video-seek {
+  width: 100%;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.lightbox-video-time {
+  min-width: 100px;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.2px;
+  text-align: center;
 }
 
 .lightbox-close {
@@ -1959,18 +2107,6 @@ label {
   font-size: 12px;
   font-family: 'Manrope', Arial, sans-serif;
   pointer-events: none;
-}
-
-/* Video attachment card (icon + filename, no inline player) */
-.video-attachment {
-  width: min(420px, 100%);
-  cursor: default;
-}
-
-.video-attachment .attachment-icon {
-  background: var(--screen-bg);
-  color: #fff;
-  font-size: 14px;
 }
 
 /* ── Audio sink (hidden) ──────────────────────────────────────────── */
