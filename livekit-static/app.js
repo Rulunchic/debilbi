@@ -2151,7 +2151,7 @@ function addMessage(chatMessage, own) {
     content.textContent = chatMessage.body;
     contentWrap.appendChild(content);
   }
-  const attachments = renderMessageAttachments(chatMessage.attachments || []);
+  const attachments = renderCompactAttachments(chatMessage.attachments || []);
   if (attachments) {
     contentWrap.appendChild(attachments);
   }
@@ -2310,6 +2310,117 @@ function getAttachmentKind(attachment) {
   if (type.startsWith('audio/') || audioAttachmentExtensions.has(extension)) return 'audio';
   if (type.startsWith('video/') || videoAttachmentExtensions.has(extension)) return 'video';
   return 'file';
+}
+
+function renderCompactAttachments(attachments) {
+  if (!Array.isArray(attachments) || !attachments.length) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'message-attachments';
+  for (const attachment of attachments) {
+    if (!attachment?.url) continue;
+    const kind = getAttachmentKind(attachment);
+
+    if (kind === 'image') {
+      const link = document.createElement('button');
+      link.type = 'button';
+      link.className = 'image-attachment';
+
+      const image = document.createElement('img');
+      image.className = 'attachment-preview';
+      image.src = attachment.url;
+      image.alt = attachment.name || 'image attachment';
+      image.loading = 'lazy';
+
+      link.appendChild(image);
+      link.addEventListener('click', () => openLightbox(attachment.url, attachment.name || ''));
+      wrap.appendChild(link);
+      continue;
+    }
+
+    if (kind === 'video') {
+      const card = document.createElement('article');
+      card.className = 'video-attachment';
+      card.setAttribute('role', 'button');
+      card.tabIndex = 0;
+      card.title = attachment.name || 'video';
+      card.setAttribute('aria-label', `Open video ${attachment.name || 'attachment'}`);
+
+      const player = document.createElement('video');
+      player.className = 'video-attachment-preview attachment-video';
+      player.playsInline = true;
+      player.preload = 'metadata';
+      player.muted = true;
+      player.controls = false;
+      player.tabIndex = -1;
+      player.setAttribute('aria-hidden', 'true');
+      player.src = attachment.url;
+
+      const openVideo = () => openLightbox(attachment.url, attachment.name || '', true);
+      card.append(player);
+      card.addEventListener('click', openVideo);
+      card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openVideo();
+        }
+      });
+      wrap.appendChild(card);
+      continue;
+    }
+
+    if (kind === 'audio') {
+      const card = document.createElement('article');
+      card.className = 'message-attachment media-attachment audio-attachment';
+      const icon = document.createElement('span');
+      icon.className = 'attachment-icon';
+      icon.textContent = 'AUD';
+      const main = document.createElement('span');
+      main.className = 'attachment-main';
+      const namEl = document.createElement('span');
+      namEl.className = 'attachment-name';
+      namEl.textContent = attachment.name || 'audio';
+      const meta = document.createElement('span');
+      meta.className = 'attachment-meta';
+      meta.textContent = `${attachment.type || 'audio'} · ${formatBytes(attachment.size || 0)}`;
+      main.append(namEl, meta);
+      const player = document.createElement('audio');
+      player.className = 'attachment-player attachment-audio';
+      player.controls = true;
+      player.preload = 'metadata';
+      player.src = attachment.url;
+      card.append(icon, main, player);
+      wrap.appendChild(card);
+      continue;
+    }
+
+    const link = document.createElement('a');
+    link.className = 'message-attachment';
+    link.href = attachment.url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.download = attachment.name || '';
+
+    const icon = document.createElement('span');
+    icon.className = 'attachment-icon';
+    icon.textContent = 'FILE';
+
+    const main = document.createElement('span');
+    main.className = 'attachment-main';
+    const name = document.createElement('span');
+    name.className = 'attachment-name';
+    name.textContent = attachment.name || 'file';
+    const meta = document.createElement('span');
+    meta.className = 'attachment-meta';
+    meta.textContent = `${attachment.type || 'file'} · ${formatBytes(attachment.size || 0)}`;
+    main.append(name, meta);
+
+    const open = document.createElement('span');
+    open.className = 'attachment-meta attachment-open-label';
+    open.textContent = 'Open';
+    link.append(icon, main, open);
+    wrap.appendChild(link);
+  }
+  return wrap.childElementCount ? wrap : null;
 }
 
 function getAttachmentExtension(attachment) {

@@ -1930,8 +1930,9 @@ label {
   position: fixed;
   inset: 0;
   z-index: 300;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(0, 0, 0, 0.9);
   padding: 56px 24px 24px;
   cursor: zoom-out;
@@ -1952,7 +1953,7 @@ label {
   transform-origin: center center;
   cursor: default;
   touch-action: none;
-  grid-area: 1 / 1;
+  flex: none;
 }
 
 .lightbox-img {
@@ -1981,12 +1982,15 @@ label {
 }
 
 .lightbox-video-shell {
+  position: relative;
   display: grid;
   gap: 12px;
   width: min(92vw, 960px);
   justify-items: stretch;
   align-items: start;
-  grid-area: 1 / 1;
+  flex: none;
+  z-index: 2;
+  pointer-events: auto;
 }
 
 .lightbox-video-stage {
@@ -1995,6 +1999,7 @@ label {
   border-radius: var(--r500);
   background: #000;
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+  z-index: 1;
 }
 
 .lightbox-video-overlay {
@@ -2015,6 +2020,7 @@ label {
   padding: 0;
   opacity: 0;
   pointer-events: none;
+  z-index: 3;
   transition: opacity 120ms ease, background 120ms ease;
 }
 
@@ -2029,6 +2035,7 @@ label {
   align-items: center;
   gap: 10px;
   padding: 0 4px;
+  z-index: 2;
 }
 
 .lightbox-media-button {
@@ -2041,6 +2048,7 @@ label {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
   color: #fff;
   padding: 0;
+  pointer-events: auto;
   transition: background 100ms ease, box-shadow 100ms ease;
 }
 
@@ -2064,6 +2072,7 @@ label {
   width: 100%;
   accent-color: var(--primary);
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .lightbox-video-time {
