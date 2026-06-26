@@ -1308,11 +1308,16 @@ label {
 }
 
 .message p {
+  margin: 0;
   overflow-wrap: anywhere;
   font-family: 'Nunito', Arial, sans-serif;
   color: var(--text);
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.4;
+}
+
+.message p + p {
+  margin-top: 4px;
 }
 
 /* ── Attachments ──────────────────────────────────────────────────── */
@@ -1897,6 +1902,7 @@ label {
   height: 100%;
   transform-origin: center center;
   cursor: default;
+  touch-action: none;
 }
 
 .lightbox-img {
@@ -1913,7 +1919,7 @@ label {
   max-height: 100%;
   border-radius: var(--r400);
   background: #000;
-  cursor: pointer;
+  cursor: default;
 }
 
 .lightbox-video[hidden],
@@ -1958,7 +1964,7 @@ label {
 /* Video attachment card (icon + filename, no inline player) */
 .video-attachment {
   width: min(420px, 100%);
-  cursor: pointer;
+  cursor: default;
 }
 
 .video-attachment .attachment-icon {

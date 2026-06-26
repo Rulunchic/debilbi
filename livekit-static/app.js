@@ -350,7 +350,12 @@ els.lightbox?.addEventListener('click', (e) => {
   if (e.target === els.lightbox || e.target === els.lightboxInner) closeLightbox();
 });
 els.lightboxClose?.addEventListener('click', closeLightbox);
-els.lightboxVideo?.addEventListener('click', toggleLightboxVideo);
+els.lightboxImg?.addEventListener('pointerdown', beginLightboxDrag);
+els.lightboxImg?.addEventListener('pointermove', moveLightboxDrag);
+els.lightboxImg?.addEventListener('pointerup', endLightboxDrag);
+els.lightboxImg?.addEventListener('pointercancel', endLightboxDrag);
+els.lightboxImg?.addEventListener('lostpointercapture', endLightboxDrag);
+els.lightboxImg?.addEventListener('dblclick', toggleLightboxZoom);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && els.lightbox && !els.lightbox.hidden) closeLightbox();
 });
@@ -360,8 +365,8 @@ els.lightbox?.addEventListener(
     if (els.lightbox.hidden) return;
     if (els.lightboxVideo && !els.lightboxVideo.hidden) return; // don't zoom video
     e.preventDefault();
-    _lbZoom = Math.max(_LB_ZOOM_MIN, Math.min(_LB_ZOOM_MAX, _lbZoom * (e.deltaY < 0 ? 1.12 : 0.9)));
-    if (els.lightboxInner) els.lightboxInner.style.transform = `scale(${_lbZoom})`;
+    const nextZoom = _lbZoom * (e.deltaY < 0 ? 1.12 : 0.9);
+    zoomLightbox(nextZoom, e.clientX, e.clientY);
   },
   { passive: false }
 );
@@ -881,13 +886,105 @@ function renderVoiceStrip(participants) {
 }
 
 let _lbZoom = 1;
-const _LB_ZOOM_MIN = 0.5,
+let _lbPan = { x: 0, y: 0 };
+let _lbDrag = null;
+const _LB_ZOOM_MIN = 1,
   _LB_ZOOM_MAX = 8;
+
+function applyLightboxTransform() {
+  if (!els.lightboxInner) return;
+  els.lightboxInner.style.transform = `translate3d(${_lbPan.x}px, ${_lbPan.y}px, 0) scale(${_lbZoom})`;
+  if (els.lightboxVideo && !els.lightboxVideo.hidden) {
+    els.lightboxInner.style.cursor = 'default';
+    if (els.lightboxImg) els.lightboxImg.style.cursor = 'default';
+    return;
+  }
+
+  const cursor = _lbZoom > 1 ? (_lbDrag ? 'grabbing' : 'grab') : 'zoom-in';
+  els.lightboxInner.style.cursor = cursor;
+  if (els.lightboxImg) els.lightboxImg.style.cursor = cursor;
+}
+
+function resetLightboxTransform() {
+  _lbZoom = 1;
+  _lbPan = { x: 0, y: 0 };
+  _lbDrag = null;
+  applyLightboxTransform();
+}
+
+function zoomLightbox(nextZoom, clientX, clientY) {
+  if (!els.lightboxInner) return;
+  const clampedZoom = Math.max(_LB_ZOOM_MIN, Math.min(_LB_ZOOM_MAX, nextZoom));
+  if (clampedZoom === 1) {
+    resetLightboxTransform();
+    return;
+  }
+
+  const rect = els.lightboxInner.getBoundingClientRect();
+  const anchor = {
+    x: clientX - (rect.left + rect.width / 2),
+    y: clientY - (rect.top + rect.height / 2),
+  };
+  const scale = clampedZoom / _lbZoom;
+  _lbPan = {
+    x: anchor.x - scale * (anchor.x - _lbPan.x),
+    y: anchor.y - scale * (anchor.y - _lbPan.y),
+  };
+  _lbZoom = clampedZoom;
+  applyLightboxTransform();
+}
+
+function beginLightboxDrag(event) {
+  if (els.lightboxVideo && !els.lightboxVideo.hidden) return;
+  if (_lbZoom <= 1 || event.button !== 0 || !els.lightboxImg) return;
+  event.preventDefault();
+  _lbDrag = {
+    pointerId: event.pointerId,
+    startX: event.clientX,
+    startY: event.clientY,
+    originX: _lbPan.x,
+    originY: _lbPan.y,
+  };
+  els.lightboxImg.setPointerCapture(event.pointerId);
+  applyLightboxTransform();
+}
+
+function moveLightboxDrag(event) {
+  if (!_lbDrag || _lbDrag.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  const dx = event.clientX - _lbDrag.startX;
+  const dy = event.clientY - _lbDrag.startY;
+  _lbPan = {
+    x: _lbDrag.originX + dx,
+    y: _lbDrag.originY + dy,
+  };
+  applyLightboxTransform();
+}
+
+function endLightboxDrag(event) {
+  if (!_lbDrag || _lbDrag.pointerId !== event.pointerId) return;
+  try {
+    els.lightboxImg?.releasePointerCapture(event.pointerId);
+  } catch {
+    // Ignore capture cleanup issues.
+  }
+  _lbDrag = null;
+  applyLightboxTransform();
+}
+
+function toggleLightboxZoom(event) {
+  if (els.lightboxVideo && !els.lightboxVideo.hidden) return;
+  event.preventDefault();
+  if (_lbZoom <= 1) {
+    zoomLightbox(2.5, event.clientX, event.clientY);
+  } else {
+    resetLightboxTransform();
+  }
+}
 
 function openLightbox(url, alt, isVideo = false) {
   if (!els.lightbox) return;
-  _lbZoom = 1;
-  if (els.lightboxInner) els.lightboxInner.style.transform = '';
+  resetLightboxTransform();
   if (isVideo) {
     els.lightboxImg.hidden = true;
     els.lightboxImg.removeAttribute('src');
@@ -902,16 +999,9 @@ function openLightbox(url, alt, isVideo = false) {
     els.lightboxImg.alt = alt || '';
     els.lightboxImg.hidden = false;
   }
+  applyLightboxTransform();
   els.lightbox.hidden = false;
   document.body.style.overflow = 'hidden';
-}
-
-function toggleLightboxVideo() {
-  if (els.lightboxVideo.paused) {
-    els.lightboxVideo.play().catch(() => {});
-  } else {
-    els.lightboxVideo.pause();
-  }
 }
 
 function closeLightbox() {
@@ -921,7 +1011,7 @@ function closeLightbox() {
   els.lightboxVideo.pause?.();
   els.lightboxVideo.removeAttribute('src');
   document.body.style.overflow = '';
-  _lbZoom = 1;
+  resetLightboxTransform();
 }
 
 function shouldGroupMessage(chatMessage) {
@@ -1895,12 +1985,11 @@ function renderMessageAttachments(attachments) {
     }
 
     if (kind === 'video') {
-      const card = document.createElement('button');
-      card.type = 'button';
+      const card = document.createElement('article');
       card.className = 'message-attachment media-attachment video-attachment';
       const icon = document.createElement('span');
       icon.className = 'attachment-icon';
-      icon.textContent = '▶';
+      icon.textContent = 'VID';
       const main = document.createElement('span');
       main.className = 'attachment-main';
       const namEl = document.createElement('span');
@@ -1910,10 +1999,25 @@ function renderMessageAttachments(attachments) {
       meta.className = 'attachment-meta';
       meta.textContent = `${attachment.type || 'video'} · ${formatBytes(attachment.size || 0)}`;
       main.append(namEl, meta);
-      card.append(icon, main);
-      card.addEventListener('click', () =>
-        openLightbox(attachment.url, attachment.name || '', true)
-      );
+      const open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'attachment-open';
+      open.textContent = 'Open';
+      open.style.background = 'none';
+      open.style.border = '0';
+      open.style.padding = '0';
+      open.style.font = 'inherit';
+      open.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openLightbox(attachment.url, attachment.name || '', true);
+      });
+      const player = document.createElement('video');
+      player.className = 'attachment-player attachment-video';
+      player.controls = true;
+      player.playsInline = true;
+      player.preload = 'metadata';
+      player.src = attachment.url;
+      card.append(icon, main, open, player);
       wrap.appendChild(card);
       continue;
     }
