@@ -1983,11 +1983,9 @@ label {
 
 .lightbox-video-shell {
   position: relative;
-  display: grid;
-  gap: 12px;
-  width: min(92vw, 960px);
-  justify-items: stretch;
-  align-items: start;
+  display: block;
+  width: min(92vw, 900px);
+  padding-bottom: 88px;
   flex: none;
   z-index: 2;
   pointer-events: auto;
@@ -2030,12 +2028,21 @@ label {
 }
 
 .lightbox-video-controls {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 10px;
-  padding: 0 4px;
-  z-index: 2;
+  padding: 10px 12px;
+  border-radius: 999px;
+  background: rgba(12, 12, 12, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 10px 30px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(12px);
+  pointer-events: auto;
+  z-index: 4;
 }
 
 .lightbox-media-button {
@@ -2049,6 +2056,7 @@ label {
   color: #fff;
   padding: 0;
   pointer-events: auto;
+  touch-action: manipulation;
   transition: background 100ms ease, box-shadow 100ms ease;
 }
 
@@ -2070,9 +2078,11 @@ label {
 
 .lightbox-video-seek {
   width: 100%;
+  height: 18px;
   accent-color: var(--primary);
   cursor: pointer;
   pointer-events: auto;
+  touch-action: none;
 }
 
 .lightbox-video-time {
@@ -2100,7 +2110,7 @@ label {
   cursor: pointer;
   border: 0;
   transition: background 120ms;
-  z-index: 1;
+  z-index: 5;
 }
 
 .lightbox-close:hover {

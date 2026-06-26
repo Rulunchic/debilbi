@@ -363,19 +363,37 @@ els.lightboxImg?.addEventListener('pointerup', endLightboxDrag);
 els.lightboxImg?.addEventListener('pointercancel', endLightboxDrag);
 els.lightboxImg?.addEventListener('lostpointercapture', endLightboxDrag);
 els.lightboxImg?.addEventListener('dblclick', toggleLightboxZoom);
-els.lightboxVideo?.addEventListener('click', toggleLightboxVideoPlayback);
-els.lightboxVideoOverlay?.addEventListener('click', toggleLightboxVideoPlayback);
-els.lightboxVideoPlay?.addEventListener('click', toggleLightboxVideoPlayback);
-els.lightboxVideoMute?.addEventListener('click', toggleLightboxVideoMute);
-els.lightboxVideoSeek?.addEventListener('input', handleLightboxVideoSeekInput);
-els.lightboxVideoSeek?.addEventListener('pointerdown', () => {
+els.lightboxVideo?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  toggleLightboxVideoPlayback();
+});
+els.lightboxVideoOverlay?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  toggleLightboxVideoPlayback();
+});
+els.lightboxVideoPlay?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  toggleLightboxVideoPlayback();
+});
+els.lightboxVideoMute?.addEventListener('click', (event) => {
+  event.stopPropagation();
+  toggleLightboxVideoMute();
+});
+els.lightboxVideoSeek?.addEventListener('input', (event) => {
+  event.stopPropagation();
+  handleLightboxVideoSeekInput();
+});
+els.lightboxVideoSeek?.addEventListener('pointerdown', (event) => {
+  event.stopPropagation();
   _lbVideoSeeking = true;
 });
-els.lightboxVideoSeek?.addEventListener('pointerup', () => {
+els.lightboxVideoSeek?.addEventListener('pointerup', (event) => {
+  event.stopPropagation();
   _lbVideoSeeking = false;
   syncLightboxVideoControls();
 });
-els.lightboxVideoSeek?.addEventListener('pointercancel', () => {
+els.lightboxVideoSeek?.addEventListener('pointercancel', (event) => {
+  event.stopPropagation();
   _lbVideoSeeking = false;
   syncLightboxVideoControls();
 });
@@ -1163,13 +1181,13 @@ function openLightbox(url, alt, isVideo = false) {
       els.lightboxVideo.hidden = false;
       els.lightboxVideo.pause();
       els.lightboxVideo.removeAttribute('src');
-      els.lightboxVideo.load?.();
+      els.lightboxVideo.preload = 'metadata';
       els.lightboxVideo.src = url;
+      els.lightboxVideo.load?.();
       els.lightboxVideo.currentTime = 0;
       els.lightboxVideo.muted = false;
       els.lightboxVideo.playsInline = true;
       els.lightboxVideo.controls = false;
-      void els.lightboxVideo.play().catch(() => {});
       syncLightboxVideoControls();
     }
   } else {
