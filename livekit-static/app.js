@@ -188,6 +188,7 @@ const els = {
   lightboxVideoPlay: document.querySelector('#lightboxVideoPlay'),
   lightboxVideoSeek: document.querySelector('#lightboxVideoSeek'),
   lightboxVideoTime: document.querySelector('#lightboxVideoTime'),
+  lightboxVideoVolume: document.querySelector('#lightboxVideoVolume'),
   lightboxVideoMute: document.querySelector('#lightboxVideoMute'),
   lightboxHint: document.querySelector('#lightboxHint'),
   lightboxClose: document.querySelector('#lightboxClose'),
@@ -363,8 +364,14 @@ els.lightboxImg?.addEventListener('pointerup', endLightboxDrag);
 els.lightboxImg?.addEventListener('pointercancel', endLightboxDrag);
 els.lightboxImg?.addEventListener('lostpointercapture', endLightboxDrag);
 els.lightboxImg?.addEventListener('dblclick', toggleLightboxZoom);
+els.lightboxVideo?.addEventListener('pointerdown', beginLightboxDrag);
+els.lightboxVideo?.addEventListener('pointermove', moveLightboxDrag);
+els.lightboxVideo?.addEventListener('pointerup', endLightboxDrag);
+els.lightboxVideo?.addEventListener('pointercancel', endLightboxDrag);
+els.lightboxVideo?.addEventListener('lostpointercapture', endLightboxDrag);
 els.lightboxVideo?.addEventListener('click', (event) => {
   event.stopPropagation();
+  if (_lbZoom > 1) return;
   toggleLightboxVideoPlayback();
 });
 els.lightboxVideoOverlay?.addEventListener('click', (event) => {
@@ -396,6 +403,10 @@ els.lightboxVideoSeek?.addEventListener('pointercancel', (event) => {
   event.stopPropagation();
   _lbVideoSeeking = false;
   syncLightboxVideoControls();
+});
+els.lightboxVideoVolume?.addEventListener('input', (event) => {
+  event.stopPropagation();
+  handleLightboxVideoVolumeInput();
 });
 els.lightboxVideo?.addEventListener('loadedmetadata', syncLightboxVideoControls);
 els.lightboxVideo?.addEventListener('durationchange', syncLightboxVideoControls);
@@ -430,7 +441,7 @@ els.lightbox?.addEventListener(
   'wheel',
   (e) => {
     if (els.lightbox.hidden) return;
-    if (els.lightboxVideo && !els.lightboxVideo.hidden) return; // don't zoom video
+    if (e.target instanceof Element && e.target.closest('.lightbox-video-controls')) return;
     e.preventDefault();
     const nextZoom = _lbZoom * (e.deltaY < 0 ? 1.12 : 0.9);
     zoomLightbox(nextZoom, e.clientX, e.clientY);
@@ -955,40 +966,51 @@ function renderVoiceStrip(participants) {
 let _lbZoom = 1;
 let _lbPan = { x: 0, y: 0 };
 let _lbDrag = null;
+let _lbDragTarget = null;
 let _lbVideoSeeking = false;
 const _LB_ZOOM_MIN = 1,
   _LB_ZOOM_MAX = 8;
 
 function applyLightboxTransform() {
-  if (!els.lightboxInner) return;
-  els.lightboxInner.style.transform = `translate3d(${_lbPan.x}px, ${_lbPan.y}px, 0) scale(${_lbZoom})`;
-  if (els.lightboxVideo && !els.lightboxVideo.hidden) {
-    els.lightboxInner.style.cursor = 'default';
-    if (els.lightboxImg) els.lightboxImg.style.cursor = 'default';
-    return;
+  const videoOpen = isVideoLightboxOpen();
+  const activeTarget = videoOpen ? els.lightboxVideo : els.lightboxInner;
+  const inactiveTarget = videoOpen ? els.lightboxInner : els.lightboxVideo;
+
+  if (inactiveTarget) {
+    inactiveTarget.style.transform = '';
+    inactiveTarget.style.cursor = '';
   }
 
-  const cursor = _lbZoom > 1 ? (_lbDrag ? 'grabbing' : 'grab') : 'zoom-in';
-  els.lightboxInner.style.cursor = cursor;
-  if (els.lightboxImg) els.lightboxImg.style.cursor = cursor;
+  if (!activeTarget) return;
+
+  activeTarget.style.transform = `translate3d(${_lbPan.x}px, ${_lbPan.y}px, 0) scale(${_lbZoom})`;
+  const cursor = _lbZoom > 1 ? (_lbDrag ? 'grabbing' : 'grab') : videoOpen ? 'default' : 'zoom-in';
+  activeTarget.style.cursor = cursor;
+  if (videoOpen && els.lightboxImg) {
+    els.lightboxImg.style.cursor = '';
+  } else if (!videoOpen && els.lightboxVideo) {
+    els.lightboxVideo.style.cursor = '';
+  }
 }
 
 function resetLightboxTransform() {
   _lbZoom = 1;
   _lbPan = { x: 0, y: 0 };
   _lbDrag = null;
+  _lbDragTarget = null;
   applyLightboxTransform();
 }
 
 function zoomLightbox(nextZoom, clientX, clientY) {
-  if (!els.lightboxInner) return;
+  const target = isVideoLightboxOpen() ? els.lightboxVideo : els.lightboxInner;
+  if (!target) return;
   const clampedZoom = Math.max(_LB_ZOOM_MIN, Math.min(_LB_ZOOM_MAX, nextZoom));
   if (clampedZoom === 1) {
     resetLightboxTransform();
     return;
   }
 
-  const rect = els.lightboxInner.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
   const anchor = {
     x: clientX - (rect.left + rect.width / 2),
     y: clientY - (rect.top + rect.height / 2),
@@ -1003,8 +1025,9 @@ function zoomLightbox(nextZoom, clientX, clientY) {
 }
 
 function beginLightboxDrag(event) {
-  if (els.lightboxVideo && !els.lightboxVideo.hidden) return;
-  if (_lbZoom <= 1 || event.button !== 0 || !els.lightboxImg) return;
+  const target = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  if (!target || _lbZoom <= 1 || event.button !== 0) return;
+  if (target === els.lightboxVideo && _lbZoom <= 1) return;
   event.preventDefault();
   _lbDrag = {
     pointerId: event.pointerId,
@@ -1013,7 +1036,12 @@ function beginLightboxDrag(event) {
     originX: _lbPan.x,
     originY: _lbPan.y,
   };
-  els.lightboxImg.setPointerCapture(event.pointerId);
+  _lbDragTarget = target;
+  try {
+    target.setPointerCapture(event.pointerId);
+  } catch {
+    // Ignore capture issues on elements that do not support it in this state.
+  }
   applyLightboxTransform();
 }
 
@@ -1032,11 +1060,12 @@ function moveLightboxDrag(event) {
 function endLightboxDrag(event) {
   if (!_lbDrag || _lbDrag.pointerId !== event.pointerId) return;
   try {
-    els.lightboxImg?.releasePointerCapture(event.pointerId);
+    _lbDragTarget?.releasePointerCapture(event.pointerId);
   } catch {
     // Ignore capture cleanup issues.
   }
   _lbDrag = null;
+  _lbDragTarget = null;
   applyLightboxTransform();
 }
 
@@ -1084,7 +1113,9 @@ function formatLightboxTime(seconds) {
   const minutes = Math.floor((whole % 3600) / 60);
   const secs = whole % 60;
   const base = `${minutes}:${String(secs).padStart(2, '0')}`;
-  return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}` : base;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    : base;
 }
 
 function syncLightboxVideoControls() {
@@ -1126,6 +1157,12 @@ function syncLightboxVideoControls() {
       ? `${formatLightboxTime(video.currentTime)} / ${formatLightboxTime(duration)}`
       : `${formatLightboxTime(video.currentTime)} / 0:00`;
   }
+
+  if (els.lightboxVideoVolume) {
+    els.lightboxVideoVolume.value = String(
+      Math.round(Math.max(0, Math.min(1, video.volume)) * 100)
+    );
+  }
 }
 
 function handleLightboxVideoSeekInput() {
@@ -1135,6 +1172,17 @@ function handleLightboxVideoSeekInput() {
   if (!duration) return;
   const ratio = Number(els.lightboxVideoSeek?.value || 0) / 1000;
   video.currentTime = duration * ratio;
+  syncLightboxVideoControls();
+}
+
+function handleLightboxVideoVolumeInput() {
+  const video = els.lightboxVideo;
+  if (!video || video.hidden) return;
+  const volume = Math.max(0, Math.min(1, Number(els.lightboxVideoVolume?.value || 0) / 100));
+  video.volume = volume;
+  if (volume > 0 && video.muted) {
+    video.muted = false;
+  }
   syncLightboxVideoControls();
 }
 

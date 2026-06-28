@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Debilbi Voice</title>
-    <link rel="stylesheet" href="/styles.css?v=20260628-4" />
+    <link rel="stylesheet" href="/styles.css?v=20260628-6" />
   </head>
   <body class="auth-locked">
     <section id="authGate" class="auth-gate" aria-live="polite">
@@ -462,6 +462,16 @@
             aria-label="Seek video"
           />
           <span id="lightboxVideoTime" class="lightbox-video-time">0:00 / 0:00</span>
+          <input
+            id="lightboxVideoVolume"
+            class="lightbox-video-volume"
+            type="range"
+            min="0"
+            max="100"
+            value="100"
+            step="1"
+            aria-label="Video volume"
+          />
           <button
             id="lightboxVideoMute"
             class="lightbox-media-button"
@@ -470,9 +480,11 @@
           ></button>
         </div>
       </div>
-      <span id="lightboxHint" class="lightbox-zoom-hint">Scroll to zoom · Drag to pan · Click outside to close</span>
+      <span id="lightboxHint" class="lightbox-zoom-hint"
+        >Scroll to zoom · Drag to pan · Click outside to close</span
+      >
     </div>
 
-    <script type="module" src="/app.js?v=20260626-5"></script>
+    <script type="module" src="/app.js?v=20260628-2"></script>
   </body>
 </html>
