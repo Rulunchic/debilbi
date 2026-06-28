@@ -8,6 +8,7 @@ import LogoUnreadSVG from '../../../../public/res/svg/debilbi-unread.svg';
 import LogoHighlightSVG from '../../../../public/res/svg/debilbi-highlight.svg';
 import NotificationSound from '../../../../public/sound/notification.ogg';
 import InviteSound from '../../../../public/sound/invite.ogg';
+import { playAudioElement } from '../../utils/audio';
 import { notificationPermission, setFavicon } from '../../utils/dom';
 import { useSetting } from '../../state/hooks/settings';
 import { settingsAtom } from '../../state/settings';
@@ -106,8 +107,7 @@ function InviteNotifications() {
   );
 
   const playSound = useCallback(() => {
-    const audioElement = audioRef.current;
-    audioElement?.play();
+    playAudioElement(audioRef.current);
   }, []);
   const getAudioRef = useCallback(() => audioRef.current, []);
 
@@ -127,7 +127,7 @@ function InviteNotifications() {
 
   return (
     // eslint-disable-next-line jsx-a11y/media-has-caption
-    <audio ref={audioRef} style={{ display: 'none' }}>
+    <audio ref={audioRef} style={{ display: 'none' }} preload="auto">
       <source src={InviteSound} type="audio/ogg" />
     </audio>
   );
@@ -179,8 +179,7 @@ function MessageNotifications() {
   );
 
   const playSound = useCallback(() => {
-    const audioElement = audioRef.current;
-    audioElement?.play();
+    playAudioElement(audioRef.current);
   }, []);
   const getAudioRef = useCallback(() => audioRef.current, []);
 
@@ -256,7 +255,7 @@ function MessageNotifications() {
 
   return (
     // eslint-disable-next-line jsx-a11y/media-has-caption
-    <audio ref={audioRef} style={{ display: 'none' }}>
+    <audio ref={audioRef} style={{ display: 'none' }} preload="auto">
       <source src={NotificationSound} type="audio/ogg" />
     </audio>
   );
