@@ -1878,9 +1878,13 @@ label {
 
 /* ── Mention highlight ───────────────────────────────────────────── */
 .message.is-mention {
-  background: rgba(17, 17, 17, 0.04);
-  border-left: 3px solid var(--primary);
+  background: rgba(255, 255, 255, 0.07);
+  border-left: 3px solid rgba(255, 255, 255, 0.22);
   padding-left: 13px;
+}
+
+.message.is-mention:hover {
+  background: rgba(255, 255, 255, 0.09);
 }
 
 /* ── Mention autocomplete popup ──────────────────────────────────── */
