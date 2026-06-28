@@ -722,10 +722,10 @@ label {
 
 .room-users {
   display: grid;
-  gap: 2px;
+  gap: 6px;
   padding-left: 20px;
-  padding-top: 3px;
-  padding-bottom: 4px;
+  padding-top: 6px;
+  padding-bottom: 8px;
 }
 .room-users:empty {
   display: none;
@@ -735,11 +735,11 @@ label {
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) 20px;
   align-items: center;
-  gap: 7px;
-  min-height: 28px;
+  gap: 9px;
+  min-height: 32px;
   border-radius: var(--r400);
   color: var(--muted);
-  padding: 2px 6px;
+  padding: 4px 8px;
   transition: background 100ms;
 }
 
@@ -765,6 +765,10 @@ label {
   white-space: nowrap;
   font-size: 12px;
   font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(255, 255, 255, 0.55);
 }
 
 .room-user-state {
@@ -1689,10 +1693,10 @@ label {
 .people-list {
   display: grid;
   align-content: start;
-  gap: 2px;
+  gap: 8px;
   min-height: 0;
   overflow: auto;
-  padding: 10px 0;
+  padding: 12px 0 14px;
 }
 
 /* Rounded avatars in people pane */
@@ -1731,17 +1735,24 @@ label {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 9px;
-  min-height: 58px;
+  gap: 10px;
+  min-height: 62px;
   margin: 0 8px;
   border-radius: var(--r400);
-  padding: 6px 8px;
+  padding: 8px 10px;
   transition: background 100ms;
 }
 
 .person-row:hover,
 .person-row.is-speaking {
   background: var(--background-hover);
+}
+
+.person-main strong {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(255, 255, 255, 0.55);
 }
 
 .person-row.is-local {
