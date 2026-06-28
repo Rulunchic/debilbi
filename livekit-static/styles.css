@@ -1313,6 +1313,10 @@ label {
   font-family: 'Manrope', Arial, sans-serif;
   font-size: 13px;
   font-weight: 500;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: rgba(255, 255, 255, 0.55);
 }
 
 .message p {
@@ -1931,6 +1935,10 @@ label {
   padding-top: 0;
   padding-bottom: 0;
   margin-top: 0;
+}
+
+.message + .message:not(.grouped) {
+  margin-top: 10px;
 }
 
 .message.grouped .message-avatar {
