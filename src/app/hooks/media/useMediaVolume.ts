@@ -23,6 +23,9 @@ export const useMediaVolume = (
       const targetEl = getTargetElement();
       if (!targetEl) return;
       targetEl.muted = mute;
+      if (!mute && targetEl.volume <= 0) {
+        targetEl.volume = 1;
+      }
     },
     [getTargetElement]
   );
@@ -31,7 +34,11 @@ export const useMediaVolume = (
     (volume: number) => {
       const targetEl = getTargetElement();
       if (!targetEl) return;
-      targetEl.volume = volume;
+      const nextVolume = Math.max(0, Math.min(volume, 1));
+      targetEl.volume = nextVolume;
+      if (nextVolume > 0 && targetEl.muted) {
+        targetEl.muted = false;
+      }
     },
     [getTargetElement]
   );

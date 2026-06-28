@@ -176,6 +176,9 @@ const els = {
   railRoomJumps: document.querySelectorAll('[data-room-jump]'),
   theater: document.querySelector('#theater'),
   theaterTitle: document.querySelector('#theaterTitle'),
+  theaterAudioControls: document.querySelector('#theaterAudioControls'),
+  theaterAudioMute: document.querySelector('#theaterAudioMute'),
+  theaterAudioVolume: document.querySelector('#theaterAudioVolume'),
   theaterMedia: document.querySelector('#theaterMedia'),
   fullscreenButton: document.querySelector('#fullscreenButton'),
   closeTheaterButton: document.querySelector('#closeTheaterButton'),
@@ -188,6 +191,7 @@ const els = {
   lightboxVideoPlay: document.querySelector('#lightboxVideoPlay'),
   lightboxVideoSeek: document.querySelector('#lightboxVideoSeek'),
   lightboxVideoTime: document.querySelector('#lightboxVideoTime'),
+  lightboxVideoVolume: document.querySelector('#lightboxVideoVolume'),
   lightboxVideoMute: document.querySelector('#lightboxVideoMute'),
   lightboxHint: document.querySelector('#lightboxHint'),
   lightboxClose: document.querySelector('#lightboxClose'),
@@ -330,6 +334,27 @@ els.fitButton.addEventListener('click', () => {
   renderRoom();
 });
 
+els.theaterAudioMute?.addEventListener('click', () => {
+  const focused = collectVisibleScreenShares(getParticipants()).find(
+    (screen) => screen.id === state.focusedScreenId
+  );
+  if (!focused) return;
+  const pref = getAudioPref(focused.participant.identity);
+  setAudioMuted(focused.participant.identity, !isMutedAudioPref(pref));
+  syncTheaterAudioControls(focused.participant);
+  applyAudioPrefs(focused.participant.identity);
+});
+
+els.theaterAudioVolume?.addEventListener('input', () => {
+  const focused = collectVisibleScreenShares(getParticipants()).find(
+    (screen) => screen.id === state.focusedScreenId
+  );
+  if (!focused) return;
+  setAudioVolume(focused.participant.identity, Number(els.theaterAudioVolume.value) / 100);
+  syncTheaterAudioControls(focused.participant);
+  applyAudioPrefs(focused.participant.identity);
+});
+
 els.theaterButton.addEventListener('click', () => {
   openTheater();
 });
@@ -363,8 +388,14 @@ els.lightboxImg?.addEventListener('pointerup', endLightboxDrag);
 els.lightboxImg?.addEventListener('pointercancel', endLightboxDrag);
 els.lightboxImg?.addEventListener('lostpointercapture', endLightboxDrag);
 els.lightboxImg?.addEventListener('dblclick', toggleLightboxZoom);
+els.lightboxVideo?.addEventListener('pointerdown', beginLightboxDrag);
+els.lightboxVideo?.addEventListener('pointermove', moveLightboxDrag);
+els.lightboxVideo?.addEventListener('pointerup', endLightboxDrag);
+els.lightboxVideo?.addEventListener('pointercancel', endLightboxDrag);
+els.lightboxVideo?.addEventListener('lostpointercapture', endLightboxDrag);
 els.lightboxVideo?.addEventListener('click', (event) => {
   event.stopPropagation();
+  if (_lbZoom > 1) return;
   toggleLightboxVideoPlayback();
 });
 els.lightboxVideoOverlay?.addEventListener('click', (event) => {
@@ -396,6 +427,10 @@ els.lightboxVideoSeek?.addEventListener('pointercancel', (event) => {
   event.stopPropagation();
   _lbVideoSeeking = false;
   syncLightboxVideoControls();
+});
+els.lightboxVideoVolume?.addEventListener('input', (event) => {
+  event.stopPropagation();
+  handleLightboxVideoVolumeInput();
 });
 els.lightboxVideo?.addEventListener('loadedmetadata', syncLightboxVideoControls);
 els.lightboxVideo?.addEventListener('durationchange', syncLightboxVideoControls);
@@ -430,7 +465,7 @@ els.lightbox?.addEventListener(
   'wheel',
   (e) => {
     if (els.lightbox.hidden) return;
-    if (els.lightboxVideo && !els.lightboxVideo.hidden) return; // don't zoom video
+    if (e.target instanceof Element && e.target.closest('.lightbox-video-controls')) return;
     e.preventDefault();
     const nextZoom = _lbZoom * (e.deltaY < 0 ? 1.12 : 0.9);
     zoomLightbox(nextZoom, e.clientX, e.clientY);
@@ -933,12 +968,14 @@ function renderPeople(participants) {
     } else {
       renderAudioControlState(muteButton, volumeInput, audioPref);
       muteButton.addEventListener('click', () => {
-        const nextPref = setAudioPref(user.identity, { muted: !getAudioPref(user.identity).muted });
+        setAudioMuted(user.identity, !isMutedAudioPref(getAudioPref(user.identity)));
+        const nextPref = getAudioPref(user.identity);
         renderAudioControlState(muteButton, volumeInput, nextPref);
         applyAudioPrefs(user.identity);
       });
       volumeInput.addEventListener('input', () => {
-        const nextPref = setAudioPref(user.identity, { volume: Number(volumeInput.value) / 100 });
+        setAudioVolume(user.identity, Number(volumeInput.value) / 100);
+        const nextPref = getAudioPref(user.identity);
         renderAudioControlState(muteButton, volumeInput, nextPref);
         applyAudioPrefs(user.identity);
       });
@@ -955,40 +992,51 @@ function renderVoiceStrip(participants) {
 let _lbZoom = 1;
 let _lbPan = { x: 0, y: 0 };
 let _lbDrag = null;
+let _lbDragTarget = null;
 let _lbVideoSeeking = false;
 const _LB_ZOOM_MIN = 1,
   _LB_ZOOM_MAX = 8;
 
 function applyLightboxTransform() {
-  if (!els.lightboxInner) return;
-  els.lightboxInner.style.transform = `translate3d(${_lbPan.x}px, ${_lbPan.y}px, 0) scale(${_lbZoom})`;
-  if (els.lightboxVideo && !els.lightboxVideo.hidden) {
-    els.lightboxInner.style.cursor = 'default';
-    if (els.lightboxImg) els.lightboxImg.style.cursor = 'default';
-    return;
+  const videoOpen = isVideoLightboxOpen();
+  const activeTarget = videoOpen ? els.lightboxVideo : els.lightboxInner;
+  const inactiveTarget = videoOpen ? els.lightboxInner : els.lightboxVideo;
+
+  if (inactiveTarget) {
+    inactiveTarget.style.transform = '';
+    inactiveTarget.style.cursor = '';
   }
 
-  const cursor = _lbZoom > 1 ? (_lbDrag ? 'grabbing' : 'grab') : 'zoom-in';
-  els.lightboxInner.style.cursor = cursor;
-  if (els.lightboxImg) els.lightboxImg.style.cursor = cursor;
+  if (!activeTarget) return;
+
+  activeTarget.style.transform = `translate3d(${_lbPan.x}px, ${_lbPan.y}px, 0) scale(${_lbZoom})`;
+  const cursor = _lbZoom > 1 ? (_lbDrag ? 'grabbing' : 'grab') : videoOpen ? 'default' : 'zoom-in';
+  activeTarget.style.cursor = cursor;
+  if (videoOpen && els.lightboxImg) {
+    els.lightboxImg.style.cursor = '';
+  } else if (!videoOpen && els.lightboxVideo) {
+    els.lightboxVideo.style.cursor = '';
+  }
 }
 
 function resetLightboxTransform() {
   _lbZoom = 1;
   _lbPan = { x: 0, y: 0 };
   _lbDrag = null;
+  _lbDragTarget = null;
   applyLightboxTransform();
 }
 
 function zoomLightbox(nextZoom, clientX, clientY) {
-  if (!els.lightboxInner) return;
+  const target = isVideoLightboxOpen() ? els.lightboxVideo : els.lightboxInner;
+  if (!target) return;
   const clampedZoom = Math.max(_LB_ZOOM_MIN, Math.min(_LB_ZOOM_MAX, nextZoom));
   if (clampedZoom === 1) {
     resetLightboxTransform();
     return;
   }
 
-  const rect = els.lightboxInner.getBoundingClientRect();
+  const rect = target.getBoundingClientRect();
   const anchor = {
     x: clientX - (rect.left + rect.width / 2),
     y: clientY - (rect.top + rect.height / 2),
@@ -1003,8 +1051,9 @@ function zoomLightbox(nextZoom, clientX, clientY) {
 }
 
 function beginLightboxDrag(event) {
-  if (els.lightboxVideo && !els.lightboxVideo.hidden) return;
-  if (_lbZoom <= 1 || event.button !== 0 || !els.lightboxImg) return;
+  const target = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  if (!target || _lbZoom <= 1 || event.button !== 0) return;
+  if (target === els.lightboxVideo && _lbZoom <= 1) return;
   event.preventDefault();
   _lbDrag = {
     pointerId: event.pointerId,
@@ -1013,7 +1062,12 @@ function beginLightboxDrag(event) {
     originX: _lbPan.x,
     originY: _lbPan.y,
   };
-  els.lightboxImg.setPointerCapture(event.pointerId);
+  _lbDragTarget = target;
+  try {
+    target.setPointerCapture(event.pointerId);
+  } catch {
+    // Ignore capture issues on elements that do not support it in this state.
+  }
   applyLightboxTransform();
 }
 
@@ -1032,11 +1086,12 @@ function moveLightboxDrag(event) {
 function endLightboxDrag(event) {
   if (!_lbDrag || _lbDrag.pointerId !== event.pointerId) return;
   try {
-    els.lightboxImg?.releasePointerCapture(event.pointerId);
+    _lbDragTarget?.releasePointerCapture(event.pointerId);
   } catch {
     // Ignore capture cleanup issues.
   }
   _lbDrag = null;
+  _lbDragTarget = null;
   applyLightboxTransform();
 }
 
@@ -1084,7 +1139,9 @@ function formatLightboxTime(seconds) {
   const minutes = Math.floor((whole % 3600) / 60);
   const secs = whole % 60;
   const base = `${minutes}:${String(secs).padStart(2, '0')}`;
-  return hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}` : base;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    : base;
 }
 
 function syncLightboxVideoControls() {
@@ -1126,6 +1183,12 @@ function syncLightboxVideoControls() {
       ? `${formatLightboxTime(video.currentTime)} / ${formatLightboxTime(duration)}`
       : `${formatLightboxTime(video.currentTime)} / 0:00`;
   }
+
+  if (els.lightboxVideoVolume) {
+    els.lightboxVideoVolume.value = String(
+      Math.round(Math.max(0, Math.min(1, video.volume)) * 100)
+    );
+  }
 }
 
 function handleLightboxVideoSeekInput() {
@@ -1135,6 +1198,17 @@ function handleLightboxVideoSeekInput() {
   if (!duration) return;
   const ratio = Number(els.lightboxVideoSeek?.value || 0) / 1000;
   video.currentTime = duration * ratio;
+  syncLightboxVideoControls();
+}
+
+function handleLightboxVideoVolumeInput() {
+  const video = els.lightboxVideo;
+  if (!video || video.hidden) return;
+  const volume = Math.max(0, Math.min(1, Number(els.lightboxVideoVolume?.value || 0) / 100));
+  video.volume = volume;
+  if (volume > 0 && video.muted) {
+    video.muted = false;
+  }
   syncLightboxVideoControls();
 }
 
@@ -1280,11 +1354,63 @@ function setAudioPref(identity, patch) {
   return next;
 }
 
+function isMutedAudioPref(pref) {
+  return pref.muted || pref.volume <= 0;
+}
+
+function isMicrophoneAudioPublication(publication) {
+  const source = String(publication?.source || '').toLowerCase();
+  return publication?.source === Track.Source.Microphone || source.includes('microphone');
+}
+
+function isLocalMicrophoneAudioElement(audio) {
+  return (
+    audio?.dataset.participantIdentity === state.identity &&
+    String(audio?.dataset.audioSource || '')
+      .toLowerCase()
+      .includes('microphone')
+  );
+}
+
+function participantAudioPublications(participant) {
+  return Array.from(participant?.trackPublications?.values() || []).filter(
+    (publication) =>
+      publication?.track && publication.track.kind === Track.Kind.Audio && !publication.isMuted
+  );
+}
+
+function participantHasAudio(participant) {
+  return participantAudioPublications(participant).length > 0;
+}
+
+function setAudioMuted(identity, muted) {
+  const pref = getAudioPref(identity);
+  if (muted) {
+    return setAudioPref(identity, { muted: true });
+  }
+
+  return setAudioPref(identity, {
+    muted: false,
+    volume: pref.volume <= 0 ? 1 : pref.volume,
+  });
+}
+
+function setAudioVolume(identity, volume) {
+  const pref = getAudioPref(identity);
+  const nextVolume = Math.max(0, Math.min(1, Number(volume)));
+  const patch = { volume: nextVolume };
+  if (nextVolume > 0 && isMutedAudioPref(pref)) {
+    patch.muted = false;
+  }
+  return setAudioPref(identity, patch);
+}
+
 function renderAudioControlState(muteButton, volumeInput, pref) {
-  muteButton.textContent = pref.muted ? 'Muted' : 'Mute';
-  muteButton.classList.toggle('active', pref.muted);
+  const muted = isMutedAudioPref(pref);
+  muteButton.textContent = muted ? 'Muted' : 'Mute';
+  muteButton.classList.toggle('active', muted);
   muteButton.disabled = false;
-  muteButton.title = pref.muted ? 'Unmute locally' : 'Mute locally';
+  muteButton.title = muted ? 'Unmute locally' : 'Mute locally';
   volumeInput.value = String(Math.round(pref.volume * 100));
   volumeInput.disabled = false;
   volumeInput.title = `Local volume ${Math.round(pref.volume * 100)}%`;
@@ -1297,7 +1423,7 @@ function applyAudioPrefs(identity = '') {
   els.audioSink.querySelectorAll(selector).forEach((audio) => {
     const pref = getAudioPref(audio.dataset.participantIdentity);
     audio.volume = pref.volume;
-    audio.muted = pref.muted;
+    audio.muted = isMutedAudioPref(pref) || isLocalMicrophoneAudioElement(audio);
   });
 }
 
@@ -1529,41 +1655,35 @@ function renderTheater() {
   video.muted = focused.participant.isLocal;
   els.theaterMedia.classList.toggle('fit-cover', state.screenFit === 'cover');
   els.theaterMedia.appendChild(video);
+  syncTheaterAudioControls(focused.participant);
   syncTheaterControls();
 }
 
 function attachAudio(participants) {
-  const desiredByIdentity = new Map();
+  const desiredByTrackSid = new Map();
   for (const participant of participants) {
-    const publications = Array.from(participant.trackPublications.values()).filter(
-      (publication) =>
-        publication?.track && publication.track.kind === Track.Kind.Audio && !publication.isMuted
-    );
-    if (!publications.length) continue;
-    const publication =
-      publications.find((item) => item.source === Track.Source.Microphone) ||
-      publications.find((item) => item.source !== Track.Source.ScreenShare) ||
-      publications[0];
-    if (!publication) continue;
-
     const audioPref = getAudioPref(participant.identity);
-    desiredByIdentity.set(participant.identity, { participant, publication, audioPref });
+    for (const publication of participantAudioPublications(participant)) {
+      const trackSid = publication.trackSid || publication.track?.sid || '';
+      if (!trackSid) continue;
+      desiredByTrackSid.set(trackSid, { participant, publication, audioPref });
+    }
   }
 
-  const existingByIdentity = new Map();
-  els.audioSink.querySelectorAll('audio[data-participant-identity]').forEach((audio) => {
-    const identity = audio.dataset.participantIdentity || '';
-    if (!identity) {
+  const existingByTrackSid = new Map();
+  els.audioSink.querySelectorAll('audio[data-track-sid]').forEach((audio) => {
+    const trackSid = audio.dataset.trackSid || audio.__livekitTrack?.sid || '';
+    if (!trackSid) {
       detachAudioElement(audio);
       return;
     }
-    const bucket = existingByIdentity.get(identity) || [];
+    const bucket = existingByTrackSid.get(trackSid) || [];
     bucket.push(audio);
-    existingByIdentity.set(identity, bucket);
+    existingByTrackSid.set(trackSid, bucket);
   });
 
-  for (const [identity, nodes] of existingByIdentity.entries()) {
-    const desired = desiredByIdentity.get(identity);
+  for (const [trackSid, nodes] of existingByTrackSid.entries()) {
+    const desired = desiredByTrackSid.get(trackSid);
     if (!desired) {
       for (const node of nodes) {
         detachAudioElement(node);
@@ -1589,28 +1709,40 @@ function attachAudio(participants) {
       applyAudioElementState(element, desired.participant, desired.audioPref, desired.publication);
     }
 
+    const playResult = element?.play?.();
+    if (playResult && typeof playResult.catch === 'function') {
+      playResult.catch(() => {});
+    }
+
     for (const node of extras) {
       detachAudioElement(node);
     }
-    desiredByIdentity.delete(identity);
+    desiredByTrackSid.delete(trackSid);
   }
 
-  for (const [identity, desired] of desiredByIdentity.entries()) {
+  for (const [, desired] of desiredByTrackSid.entries()) {
     const element = desired.publication.track.attach();
     element.__livekitTrack = desired.publication.track;
     applyAudioElementState(element, desired.participant, desired.audioPref, desired.publication);
     els.audioSink.appendChild(element);
+    const playResult = element?.play?.();
+    if (playResult && typeof playResult.catch === 'function') {
+      playResult.catch(() => {});
+    }
   }
 }
 
 function applyAudioElementState(element, participant, audioPref, publication) {
   element.dataset.participantIdentity = participant.identity;
   element.dataset.trackSid = publication.trackSid || publication.track?.sid || '';
+  element.dataset.audioSource = String(publication.source || '');
   element.autoplay = true;
   element.playsInline = true;
   element.controls = false;
   element.volume = audioPref.volume;
-  element.muted = Boolean(participant.isLocal) || audioPref.muted;
+  element.muted =
+    isMutedAudioPref(audioPref) ||
+    (participant.isLocal && isMicrophoneAudioPublication(publication));
 }
 
 function detachAudioElement(element) {
@@ -2885,6 +3017,37 @@ function syncTheaterControls() {
   els.fullscreenButton.setAttribute('aria-label', fullscreenLabel);
   els.closeTheaterButton.title = 'Close demo';
   els.closeTheaterButton.setAttribute('aria-label', 'Close demo');
+  syncTheaterAudioControls();
+}
+
+function syncTheaterAudioControls(participant = null) {
+  if (!els.theaterAudioControls || !els.theaterAudioMute || !els.theaterAudioVolume) return;
+  const focused =
+    participant ||
+    collectVisibleScreenShares(getParticipants()).find(
+      (screen) => screen.id === state.focusedScreenId
+    )?.participant ||
+    null;
+
+  if (!focused) {
+    els.theaterAudioControls.hidden = true;
+    return;
+  }
+
+  const pref = getAudioPref(focused.identity);
+  const muted = isMutedAudioPref(pref);
+  const hasAudio = participantHasAudio(focused);
+  els.theaterAudioControls.hidden = false;
+  els.theaterAudioControls.dataset.identity = focused.identity;
+  els.theaterAudioMute.innerHTML = iconSvg(muted ? 'mute' : 'volume');
+  els.theaterAudioMute.classList.toggle('active', muted);
+  const muteLabel = muted ? 'Unmute demo audio' : 'Mute demo audio';
+  els.theaterAudioMute.title = muteLabel;
+  els.theaterAudioMute.setAttribute('aria-label', muteLabel);
+  els.theaterAudioVolume.value = String(Math.round(pref.volume * 100));
+  els.theaterAudioVolume.title = `Demo audio ${Math.round(pref.volume * 100)}%`;
+  els.theaterAudioMute.disabled = !hasAudio;
+  els.theaterAudioVolume.disabled = !hasAudio;
 }
 
 function iconSvg(name) {

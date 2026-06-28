@@ -1866,9 +1866,31 @@ label {
   font-weight: 500;
 }
 
-.theater-topbar div {
+.theater-topbar > div {
   display: flex;
   gap: 8px;
+}
+
+.theater-audio-controls {
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.theater-actions {
+  flex-shrink: 0;
+}
+
+.theater-audio-volume {
+  width: clamp(112px, 18vw, 200px);
+  min-width: 112px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.theater-audio-mute {
+  flex-shrink: 0;
 }
 
 .theater-media {
@@ -2007,6 +2029,10 @@ label {
   background: #000;
   cursor: default;
   object-fit: contain;
+  transform-origin: center center;
+  touch-action: none;
+  user-select: none;
+  will-change: transform;
 }
 
 .lightbox-video[hidden],
@@ -2066,7 +2092,7 @@ label {
   right: 16px;
   bottom: 16px;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(72px, 132px) auto;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
@@ -2125,6 +2151,16 @@ label {
   font-size: 11px;
   letter-spacing: 0.2px;
   text-align: center;
+}
+
+.lightbox-video-volume {
+  width: 100%;
+  min-width: 72px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
 }
 
 .lightbox-close {

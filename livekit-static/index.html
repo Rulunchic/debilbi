@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Debilbi Voice</title>
-    <link rel="stylesheet" href="/styles.css?v=20260628-4" />
+    <link rel="stylesheet" href="/styles.css?v=20260628-6" />
   </head>
   <body class="auth-locked">
     <section id="authGate" class="auth-gate" aria-live="polite">
@@ -385,7 +385,26 @@
     <div id="theater" class="theater" aria-hidden="true">
       <div class="theater-topbar">
         <strong id="theaterTitle">Screen share</strong>
-        <div>
+        <div id="theaterAudioControls" class="theater-audio-controls" hidden>
+          <button
+            id="theaterAudioMute"
+            class="action-button theater-audio-mute"
+            type="button"
+            title="Mute demo audio"
+            aria-label="Mute demo audio"
+          ></button>
+          <input
+            id="theaterAudioVolume"
+            class="theater-audio-volume"
+            type="range"
+            min="0"
+            max="100"
+            value="100"
+            step="1"
+            aria-label="Demo audio volume"
+          />
+        </div>
+        <div class="theater-actions">
           <button
             id="fullscreenButton"
             class="action-button icon-toggle theater-fullscreen-button"
@@ -462,6 +481,16 @@
             aria-label="Seek video"
           />
           <span id="lightboxVideoTime" class="lightbox-video-time">0:00 / 0:00</span>
+          <input
+            id="lightboxVideoVolume"
+            class="lightbox-video-volume"
+            type="range"
+            min="0"
+            max="100"
+            value="100"
+            step="1"
+            aria-label="Video volume"
+          />
           <button
             id="lightboxVideoMute"
             class="lightbox-media-button"
@@ -470,9 +499,11 @@
           ></button>
         </div>
       </div>
-      <span id="lightboxHint" class="lightbox-zoom-hint">Scroll to zoom · Drag to pan · Click outside to close</span>
+      <span id="lightboxHint" class="lightbox-zoom-hint"
+        >Scroll to zoom · Drag to pan · Click outside to close</span
+      >
     </div>
 
-    <script type="module" src="/app.js?v=20260626-5"></script>
+    <script type="module" src="/app.js?v=20260628-3"></script>
   </body>
 </html>

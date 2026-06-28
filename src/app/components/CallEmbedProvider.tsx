@@ -59,6 +59,7 @@ import { useLivekitSupport } from '../hooks/useLivekitSupport';
 import { CallAvatarAnimation } from '../styles/Animations.css';
 import { webRTCSupported } from '../utils/rtc';
 import { useDocumentAudioOutputSink, useMediaOutputSink } from '../hooks/media';
+import { playAudioElement } from '../utils/audio';
 
 type IncomingCallInfo = {
   room: Room;
@@ -109,8 +110,7 @@ function IncomingCall({ dm, info, onIgnore, onAnswer, onReject }: IncomingCallPr
   );
 
   const playSound = useCallback(() => {
-    const audioElement = audioRef.current;
-    audioElement?.play();
+    playAudioElement(audioRef.current);
   }, []);
 
   useEffect(() => {
@@ -218,7 +218,7 @@ function IncomingCall({ dm, info, onIgnore, onAnswer, onReject }: IncomingCallPr
           </FocusTrap>
         </OverlayCenter>
       </Overlay>
-      <audio ref={audioRef} loop style={{ display: 'none' }}>
+      <audio ref={audioRef} loop style={{ display: 'none' }} preload="auto">
         <source src={CallSound} type="audio/ogg" />
       </audio>
     </>
