@@ -385,7 +385,26 @@
     <div id="theater" class="theater" aria-hidden="true">
       <div class="theater-topbar">
         <strong id="theaterTitle">Screen share</strong>
-        <div>
+        <div id="theaterAudioControls" class="theater-audio-controls" hidden>
+          <button
+            id="theaterAudioMute"
+            class="action-button theater-audio-mute"
+            type="button"
+            title="Mute demo audio"
+            aria-label="Mute demo audio"
+          ></button>
+          <input
+            id="theaterAudioVolume"
+            class="theater-audio-volume"
+            type="range"
+            min="0"
+            max="100"
+            value="100"
+            step="1"
+            aria-label="Demo audio volume"
+          />
+        </div>
+        <div class="theater-actions">
           <button
             id="fullscreenButton"
             class="action-button icon-toggle theater-fullscreen-button"
@@ -485,6 +504,6 @@
       >
     </div>
 
-    <script type="module" src="/app.js?v=20260628-2"></script>
+    <script type="module" src="/app.js?v=20260628-3"></script>
   </body>
 </html>

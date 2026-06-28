@@ -1866,9 +1866,31 @@ label {
   font-weight: 500;
 }
 
-.theater-topbar div {
+.theater-topbar > div {
   display: flex;
   gap: 8px;
+}
+
+.theater-audio-controls {
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.theater-actions {
+  flex-shrink: 0;
+}
+
+.theater-audio-volume {
+  width: clamp(112px, 18vw, 200px);
+  min-width: 112px;
+  height: 18px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.theater-audio-mute {
+  flex-shrink: 0;
 }
 
 .theater-media {

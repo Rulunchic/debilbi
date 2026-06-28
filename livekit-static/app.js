@@ -176,6 +176,9 @@ const els = {
   railRoomJumps: document.querySelectorAll('[data-room-jump]'),
   theater: document.querySelector('#theater'),
   theaterTitle: document.querySelector('#theaterTitle'),
+  theaterAudioControls: document.querySelector('#theaterAudioControls'),
+  theaterAudioMute: document.querySelector('#theaterAudioMute'),
+  theaterAudioVolume: document.querySelector('#theaterAudioVolume'),
   theaterMedia: document.querySelector('#theaterMedia'),
   fullscreenButton: document.querySelector('#fullscreenButton'),
   closeTheaterButton: document.querySelector('#closeTheaterButton'),
@@ -329,6 +332,27 @@ els.screenQuality.addEventListener('change', async () => {
 els.fitButton.addEventListener('click', () => {
   state.screenFit = state.screenFit === 'contain' ? 'cover' : 'contain';
   renderRoom();
+});
+
+els.theaterAudioMute?.addEventListener('click', () => {
+  const focused = collectVisibleScreenShares(getParticipants()).find(
+    (screen) => screen.id === state.focusedScreenId
+  );
+  if (!focused) return;
+  const pref = getAudioPref(focused.participant.identity);
+  setAudioMuted(focused.participant.identity, !isMutedAudioPref(pref));
+  syncTheaterAudioControls(focused.participant);
+  applyAudioPrefs(focused.participant.identity);
+});
+
+els.theaterAudioVolume?.addEventListener('input', () => {
+  const focused = collectVisibleScreenShares(getParticipants()).find(
+    (screen) => screen.id === state.focusedScreenId
+  );
+  if (!focused) return;
+  setAudioVolume(focused.participant.identity, Number(els.theaterAudioVolume.value) / 100);
+  syncTheaterAudioControls(focused.participant);
+  applyAudioPrefs(focused.participant.identity);
 });
 
 els.theaterButton.addEventListener('click', () => {
@@ -944,12 +968,14 @@ function renderPeople(participants) {
     } else {
       renderAudioControlState(muteButton, volumeInput, audioPref);
       muteButton.addEventListener('click', () => {
-        const nextPref = setAudioPref(user.identity, { muted: !getAudioPref(user.identity).muted });
+        setAudioMuted(user.identity, !isMutedAudioPref(getAudioPref(user.identity)));
+        const nextPref = getAudioPref(user.identity);
         renderAudioControlState(muteButton, volumeInput, nextPref);
         applyAudioPrefs(user.identity);
       });
       volumeInput.addEventListener('input', () => {
-        const nextPref = setAudioPref(user.identity, { volume: Number(volumeInput.value) / 100 });
+        setAudioVolume(user.identity, Number(volumeInput.value) / 100);
+        const nextPref = getAudioPref(user.identity);
         renderAudioControlState(muteButton, volumeInput, nextPref);
         applyAudioPrefs(user.identity);
       });
@@ -1328,11 +1354,63 @@ function setAudioPref(identity, patch) {
   return next;
 }
 
+function isMutedAudioPref(pref) {
+  return pref.muted || pref.volume <= 0;
+}
+
+function isMicrophoneAudioPublication(publication) {
+  const source = String(publication?.source || '').toLowerCase();
+  return publication?.source === Track.Source.Microphone || source.includes('microphone');
+}
+
+function isLocalMicrophoneAudioElement(audio) {
+  return (
+    audio?.dataset.participantIdentity === state.identity &&
+    String(audio?.dataset.audioSource || '')
+      .toLowerCase()
+      .includes('microphone')
+  );
+}
+
+function participantAudioPublications(participant) {
+  return Array.from(participant?.trackPublications?.values() || []).filter(
+    (publication) =>
+      publication?.track && publication.track.kind === Track.Kind.Audio && !publication.isMuted
+  );
+}
+
+function participantHasAudio(participant) {
+  return participantAudioPublications(participant).length > 0;
+}
+
+function setAudioMuted(identity, muted) {
+  const pref = getAudioPref(identity);
+  if (muted) {
+    return setAudioPref(identity, { muted: true });
+  }
+
+  return setAudioPref(identity, {
+    muted: false,
+    volume: pref.volume <= 0 ? 1 : pref.volume,
+  });
+}
+
+function setAudioVolume(identity, volume) {
+  const pref = getAudioPref(identity);
+  const nextVolume = Math.max(0, Math.min(1, Number(volume)));
+  const patch = { volume: nextVolume };
+  if (nextVolume > 0 && isMutedAudioPref(pref)) {
+    patch.muted = false;
+  }
+  return setAudioPref(identity, patch);
+}
+
 function renderAudioControlState(muteButton, volumeInput, pref) {
-  muteButton.textContent = pref.muted ? 'Muted' : 'Mute';
-  muteButton.classList.toggle('active', pref.muted);
+  const muted = isMutedAudioPref(pref);
+  muteButton.textContent = muted ? 'Muted' : 'Mute';
+  muteButton.classList.toggle('active', muted);
   muteButton.disabled = false;
-  muteButton.title = pref.muted ? 'Unmute locally' : 'Mute locally';
+  muteButton.title = muted ? 'Unmute locally' : 'Mute locally';
   volumeInput.value = String(Math.round(pref.volume * 100));
   volumeInput.disabled = false;
   volumeInput.title = `Local volume ${Math.round(pref.volume * 100)}%`;
@@ -1345,7 +1423,7 @@ function applyAudioPrefs(identity = '') {
   els.audioSink.querySelectorAll(selector).forEach((audio) => {
     const pref = getAudioPref(audio.dataset.participantIdentity);
     audio.volume = pref.volume;
-    audio.muted = pref.muted;
+    audio.muted = isMutedAudioPref(pref) || isLocalMicrophoneAudioElement(audio);
   });
 }
 
@@ -1577,41 +1655,35 @@ function renderTheater() {
   video.muted = focused.participant.isLocal;
   els.theaterMedia.classList.toggle('fit-cover', state.screenFit === 'cover');
   els.theaterMedia.appendChild(video);
+  syncTheaterAudioControls(focused.participant);
   syncTheaterControls();
 }
 
 function attachAudio(participants) {
-  const desiredByIdentity = new Map();
+  const desiredByTrackSid = new Map();
   for (const participant of participants) {
-    const publications = Array.from(participant.trackPublications.values()).filter(
-      (publication) =>
-        publication?.track && publication.track.kind === Track.Kind.Audio && !publication.isMuted
-    );
-    if (!publications.length) continue;
-    const publication =
-      publications.find((item) => item.source === Track.Source.Microphone) ||
-      publications.find((item) => item.source !== Track.Source.ScreenShare) ||
-      publications[0];
-    if (!publication) continue;
-
     const audioPref = getAudioPref(participant.identity);
-    desiredByIdentity.set(participant.identity, { participant, publication, audioPref });
+    for (const publication of participantAudioPublications(participant)) {
+      const trackSid = publication.trackSid || publication.track?.sid || '';
+      if (!trackSid) continue;
+      desiredByTrackSid.set(trackSid, { participant, publication, audioPref });
+    }
   }
 
-  const existingByIdentity = new Map();
-  els.audioSink.querySelectorAll('audio[data-participant-identity]').forEach((audio) => {
-    const identity = audio.dataset.participantIdentity || '';
-    if (!identity) {
+  const existingByTrackSid = new Map();
+  els.audioSink.querySelectorAll('audio[data-track-sid]').forEach((audio) => {
+    const trackSid = audio.dataset.trackSid || audio.__livekitTrack?.sid || '';
+    if (!trackSid) {
       detachAudioElement(audio);
       return;
     }
-    const bucket = existingByIdentity.get(identity) || [];
+    const bucket = existingByTrackSid.get(trackSid) || [];
     bucket.push(audio);
-    existingByIdentity.set(identity, bucket);
+    existingByTrackSid.set(trackSid, bucket);
   });
 
-  for (const [identity, nodes] of existingByIdentity.entries()) {
-    const desired = desiredByIdentity.get(identity);
+  for (const [trackSid, nodes] of existingByTrackSid.entries()) {
+    const desired = desiredByTrackSid.get(trackSid);
     if (!desired) {
       for (const node of nodes) {
         detachAudioElement(node);
@@ -1637,28 +1709,40 @@ function attachAudio(participants) {
       applyAudioElementState(element, desired.participant, desired.audioPref, desired.publication);
     }
 
+    const playResult = element?.play?.();
+    if (playResult && typeof playResult.catch === 'function') {
+      playResult.catch(() => {});
+    }
+
     for (const node of extras) {
       detachAudioElement(node);
     }
-    desiredByIdentity.delete(identity);
+    desiredByTrackSid.delete(trackSid);
   }
 
-  for (const [identity, desired] of desiredByIdentity.entries()) {
+  for (const [, desired] of desiredByTrackSid.entries()) {
     const element = desired.publication.track.attach();
     element.__livekitTrack = desired.publication.track;
     applyAudioElementState(element, desired.participant, desired.audioPref, desired.publication);
     els.audioSink.appendChild(element);
+    const playResult = element?.play?.();
+    if (playResult && typeof playResult.catch === 'function') {
+      playResult.catch(() => {});
+    }
   }
 }
 
 function applyAudioElementState(element, participant, audioPref, publication) {
   element.dataset.participantIdentity = participant.identity;
   element.dataset.trackSid = publication.trackSid || publication.track?.sid || '';
+  element.dataset.audioSource = String(publication.source || '');
   element.autoplay = true;
   element.playsInline = true;
   element.controls = false;
   element.volume = audioPref.volume;
-  element.muted = Boolean(participant.isLocal) || audioPref.muted;
+  element.muted =
+    isMutedAudioPref(audioPref) ||
+    (participant.isLocal && isMicrophoneAudioPublication(publication));
 }
 
 function detachAudioElement(element) {
@@ -2933,6 +3017,37 @@ function syncTheaterControls() {
   els.fullscreenButton.setAttribute('aria-label', fullscreenLabel);
   els.closeTheaterButton.title = 'Close demo';
   els.closeTheaterButton.setAttribute('aria-label', 'Close demo');
+  syncTheaterAudioControls();
+}
+
+function syncTheaterAudioControls(participant = null) {
+  if (!els.theaterAudioControls || !els.theaterAudioMute || !els.theaterAudioVolume) return;
+  const focused =
+    participant ||
+    collectVisibleScreenShares(getParticipants()).find(
+      (screen) => screen.id === state.focusedScreenId
+    )?.participant ||
+    null;
+
+  if (!focused) {
+    els.theaterAudioControls.hidden = true;
+    return;
+  }
+
+  const pref = getAudioPref(focused.identity);
+  const muted = isMutedAudioPref(pref);
+  const hasAudio = participantHasAudio(focused);
+  els.theaterAudioControls.hidden = false;
+  els.theaterAudioControls.dataset.identity = focused.identity;
+  els.theaterAudioMute.innerHTML = iconSvg(muted ? 'mute' : 'volume');
+  els.theaterAudioMute.classList.toggle('active', muted);
+  const muteLabel = muted ? 'Unmute demo audio' : 'Mute demo audio';
+  els.theaterAudioMute.title = muteLabel;
+  els.theaterAudioMute.setAttribute('aria-label', muteLabel);
+  els.theaterAudioVolume.value = String(Math.round(pref.volume * 100));
+  els.theaterAudioVolume.title = `Demo audio ${Math.round(pref.volume * 100)}%`;
+  els.theaterAudioMute.disabled = !hasAudio;
+  els.theaterAudioVolume.disabled = !hasAudio;
 }
 
 function iconSvg(name) {
