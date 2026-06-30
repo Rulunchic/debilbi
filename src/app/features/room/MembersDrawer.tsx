@@ -1,6 +1,7 @@
 import React, {
   ChangeEventHandler,
   MouseEventHandler,
+  useEffect,
   useCallback,
   useMemo,
   useRef,
@@ -26,7 +27,7 @@ import {
   TooltipProvider,
   config,
 } from 'folds';
-import { MatrixClient, Room, RoomMember } from 'matrix-js-sdk';
+import { MatrixClient, MatrixEvent, Room, RoomMember, RoomMemberEvent } from 'matrix-js-sdk';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import classNames from 'classnames';
 
@@ -174,20 +175,74 @@ const getRoomMemberStr: SearchItemStrGetter<RoomMember> = (m, query) =>
 
 type MembersDrawerProps = {
   room: Room;
-  members: RoomMember[];
 };
-export function MembersDrawer({ room, members }: MembersDrawerProps) {
+export function MembersDrawer({ room }: MembersDrawerProps) {
   const mx = useMatrixClient();
   const useAuthentication = useMediaAuthentication();
   const scrollRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const scrollTopAnchorRef = useRef<HTMLDivElement>(null);
+  const [members, setMembers] = useState<RoomMember[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(true);
   const powerLevels = usePowerLevelsContext();
   const creators = useRoomCreators(room);
   const getPowerTag = useGetMemberPowerTag(room, creators, powerLevels);
   const getPowerLevel = useGetMemberPowerLevel(powerLevels);
 
-  const fetchingMembers = members.length < room.getJoinedMemberCount();
+  useEffect(() => {
+    let disposed = false;
+    let loadingServerMembers = true;
+
+    const updateMemberList = (event?: MatrixEvent) => {
+      if (!room || disposed || loadingServerMembers) return;
+      if (event && event.getRoomId() !== room.roomId) return;
+      setMembers(room.getMembers());
+    };
+
+    const loadMembersFromServer = async () => {
+      setLoadingMembers(true);
+      room.currentState.markOutOfBandMembersStarted();
+
+      try {
+        const response = await mx.members(room.roomId);
+        if (disposed) return;
+
+        const mapEvent = mx.getEventMapper();
+        const serverMembers = Object.values(response).reduce<MatrixEvent[]>((acc, events) => {
+          acc.push(...events.map(mapEvent));
+          return acc;
+        }, []);
+
+        room.currentState.setOutOfBandMembers(serverMembers);
+
+        loadingServerMembers = false;
+        if (!disposed) setMembers(room.getMembers());
+      } catch (error) {
+        loadingServerMembers = false;
+        room.currentState.markOutOfBandMembersFailed();
+
+        if (!disposed) {
+          console.error(`Failed to load members for room ${room.roomId}`, error);
+          setMembers(room.getMembers());
+        }
+      } finally {
+        if (!disposed) setLoadingMembers(false);
+      }
+    };
+
+    loadMembersFromServer();
+
+    mx.on(RoomMemberEvent.Membership, updateMemberList);
+    mx.on(RoomMemberEvent.PowerLevel, updateMemberList);
+
+    return () => {
+      disposed = true;
+      mx.removeListener(RoomMemberEvent.Membership, updateMemberList);
+      mx.removeListener(RoomMemberEvent.PowerLevel, updateMemberList);
+    };
+  }, [mx, room]);
+
+  const fetchingMembers = loadingMembers;
   const openUserRoomProfile = useOpenUserRoomProfile();
   const space = useSpaceOptionally();
   const openProfileUserId = useUserRoomProfileState()?.userId;

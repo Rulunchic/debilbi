@@ -23,6 +23,13 @@ export const CallControlContainer = style({
   padding: config.space.S400,
 });
 
+export const CallControlOverlay = style({
+  position: 'absolute',
+  left: config.space.S400,
+  bottom: config.space.S400,
+  zIndex: 2,
+});
+
 export const PrescreenMessage = style({
   padding: config.space.S200,
 });

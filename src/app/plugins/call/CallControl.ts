@@ -28,6 +28,23 @@ export class CallControl extends EventEmitter implements CallControlState {
     return screenshareBtn ?? undefined;
   }
 
+  private get screenQualitySelect(): HTMLSelectElement | undefined {
+    const select = this.document?.querySelector(
+      'select#screenQuality, label.quality-control select, select[name="screenQuality"]'
+    ) as HTMLSelectElement | null;
+
+    return select ?? undefined;
+  }
+
+  private setScreenshareQuality(quality: string) {
+    const select = this.screenQualitySelect;
+    if (!select) return;
+
+    select.value = quality;
+    select.dispatchEvent(new Event('input', { bubbles: true }));
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
   private get settingsButton(): HTMLElement | undefined {
     const leaveBtn = this.document?.querySelector('[data-testid="incall_leave"]');
 
@@ -211,6 +228,20 @@ export class CallControl extends EventEmitter implements CallControlState {
 
   public toggleScreenshare() {
     this.screenshareButton?.click();
+  }
+
+  public startScreenshare(quality?: string) {
+    if (quality) {
+      this.setScreenshareQuality(quality);
+    }
+
+    this.toggleScreenshare();
+
+    if (quality) {
+      window.setTimeout(() => {
+        this.setScreenshareQuality(quality);
+      }, 0);
+    }
   }
 
   public toggleSpotlight() {
