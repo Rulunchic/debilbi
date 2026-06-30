@@ -143,7 +143,7 @@ function CallJoined({ joined, containerRef }: CallJoinedProps) {
   const callEmbed = useCallEmbed();
 
   return (
-    <Box grow="Yes" direction="Column">
+    <Box grow="Yes" direction="Column" style={{ position: 'relative' }}>
       <Box grow="Yes" ref={containerRef} />
       {callEmbed && joined && <CallControls callEmbed={callEmbed} />}
     </Box>

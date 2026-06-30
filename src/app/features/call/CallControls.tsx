@@ -1,8 +1,7 @@
-import React, { MouseEventHandler, useCallback, useRef, useState } from 'react';
+import React, { MouseEventHandler, useCallback, useState } from 'react';
+import FocusTrap from 'focus-trap-react';
 import {
   Box,
-  Button,
-  config,
   Icon,
   IconButton,
   Icons,
@@ -12,192 +11,251 @@ import {
   RectCords,
   Spinner,
   Text,
-  toRem,
+  Tooltip,
+  TooltipProvider,
+  config,
 } from 'folds';
-import FocusTrap from 'focus-trap-react';
-import { SequenceCard } from '../../components/sequence-card';
-import * as css from './styles.css';
-import {
-  ChatButton,
-  ControlDivider,
-  MicrophoneButton,
-  ScreenShareButton,
-  SoundButton,
-  VideoButton,
-} from './Controls';
 import { CallEmbed, useCallControlState } from '../../plugins/call';
-import { useResizeObserver } from '../../hooks/useResizeObserver';
-import { stopPropagation } from '../../utils/keyboard';
+import * as css from './styles.css';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
+import { ContainerColor } from '../../styles/ContainerColor.css';
+import { stopPropagation } from '../../utils/keyboard';
 
 type CallControlsProps = {
   callEmbed: CallEmbed;
 };
+
+type ScreenShareQuality = {
+  value: string;
+  label: string;
+};
+
+const SCREEN_SHARE_QUALITIES: ScreenShareQuality[] = [
+  { value: 'smooth720', label: 'Smooth 720p60' },
+  { value: 'smooth1080', label: 'Smooth 1080p60' },
+  { value: 'balanced1080', label: 'Balanced 1080p30' },
+  { value: 'sharp1440', label: 'Sharp 1440p30' },
+  { value: 'stable1440', label: 'Stable 1440p60' },
+  { value: 'sharp4k', label: 'Sharp 4K30' },
+];
+
+function MicrophoneButton({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
+  return (
+    <TooltipProvider
+      position="Top"
+      delay={500}
+      tooltip={
+        <Tooltip>
+          <Text size="T200">{enabled ? 'Turn Off Microphone' : 'Turn On Microphone'}</Text>
+        </Tooltip>
+      }
+    >
+      {(anchorRef) => (
+        <IconButton
+          ref={anchorRef}
+          variant={enabled ? 'Surface' : 'Warning'}
+          fill="Soft"
+          radii="400"
+          size="300"
+          onClick={onToggle}
+          outlined
+        >
+          <Icon size="200" src={enabled ? Icons.Mic : Icons.MicMute} filled={!enabled} />
+        </IconButton>
+      )}
+    </TooltipProvider>
+  );
+}
+
+function ScreenShareButton({
+  enabled,
+  selectedQuality,
+  onStart,
+  onStop,
+}: {
+  enabled: boolean;
+  selectedQuality: ScreenShareQuality['value'];
+  onStart: (quality: ScreenShareQuality['value']) => void;
+  onStop: () => void;
+}) {
+  const [menuCords, setMenuCords] = useState<RectCords>();
+
+  const selectedLabel =
+    SCREEN_SHARE_QUALITIES.find((quality) => quality.value === selectedQuality)?.label ??
+    SCREEN_SHARE_QUALITIES[0].label;
+
+  const handleButtonClick: MouseEventHandler<HTMLButtonElement> = (evt) => {
+    if (enabled) {
+      onStop();
+      return;
+    }
+
+    setMenuCords(evt.currentTarget.getBoundingClientRect());
+  };
+
+  const handleSelect = (quality: ScreenShareQuality['value']) => {
+    onStart(quality);
+    setMenuCords(undefined);
+  };
+
+  return (
+    <>
+      <TooltipProvider
+        position="Top"
+        delay={500}
+        tooltip={
+          <Tooltip>
+            <Text size="T200">
+              {enabled ? 'Stop Screenshare' : `Start Screenshare · ${selectedLabel}`}
+            </Text>
+          </Tooltip>
+        }
+      >
+        {(anchorRef) => (
+          <IconButton
+            ref={anchorRef}
+            variant={enabled ? 'Success' : 'Surface'}
+            fill="Soft"
+            radii="400"
+            size="300"
+            onClick={handleButtonClick}
+            outlined
+          >
+            <Icon size="200" src={Icons.ScreenShare} filled={enabled} />
+          </IconButton>
+        )}
+      </TooltipProvider>
+      <PopOut
+        anchor={menuCords}
+        offset={5}
+        position="Top"
+        align="Start"
+        content={
+          <FocusTrap
+            focusTrapOptions={{
+              initialFocus: false,
+              onDeactivate: () => setMenuCords(undefined),
+              clickOutsideDeactivates: true,
+              isKeyForward: (evt: KeyboardEvent) =>
+                evt.key === 'ArrowDown' || evt.key === 'ArrowRight',
+              isKeyBackward: (evt: KeyboardEvent) =>
+                evt.key === 'ArrowUp' || evt.key === 'ArrowLeft',
+              escapeDeactivates: stopPropagation,
+            }}
+          >
+            <Menu>
+              <Box direction="Column" gap="100" style={{ padding: config.space.S100 }}>
+                <Text size="T200" style={{ paddingInline: config.space.S100 }}>
+                  Screen share quality
+                </Text>
+                {SCREEN_SHARE_QUALITIES.map((quality) => {
+                  const selected = selectedQuality === quality.value;
+                  return (
+                    <MenuItem
+                      key={quality.value}
+                      size="300"
+                      variant={selected ? 'Primary' : 'Surface'}
+                      radii="300"
+                      onClick={() => handleSelect(quality.value)}
+                    >
+                      <Text size="T300">{quality.label}</Text>
+                    </MenuItem>
+                  );
+                })}
+              </Box>
+            </Menu>
+          </FocusTrap>
+        }
+      />
+    </>
+  );
+}
+
+function HangupButton({ exiting, onLeave }: { exiting: boolean; onLeave: () => void }) {
+  return (
+    <TooltipProvider
+      position="Top"
+      delay={500}
+      tooltip={
+        <Tooltip>
+          <Text size="T200">Leave Voice Chat</Text>
+        </Tooltip>
+      }
+    >
+      {(anchorRef) => (
+        <IconButton
+          ref={anchorRef}
+          variant="Critical"
+          fill="Soft"
+          radii="400"
+          size="300"
+          onClick={onLeave}
+          disabled={exiting}
+          outlined
+        >
+          {exiting ? (
+            <Spinner variant="Critical" fill="Soft" size="200" />
+          ) : (
+            <Icon size="200" src={Icons.PhoneDown} filled />
+          )}
+        </IconButton>
+      )}
+    </TooltipProvider>
+  );
+}
+
 export function CallControls({ callEmbed }: CallControlsProps) {
-  const controlRef = useRef<HTMLDivElement>(null);
-  const [compact, setCompact] = useState(document.body.clientWidth < 500);
-
-  useResizeObserver(
-    useCallback(() => {
-      const element = controlRef.current;
-      if (!element) return;
-      setCompact(element.clientWidth < 500);
-    }, []),
-    useCallback(() => controlRef.current, [])
-  );
-
-  const { microphone, video, sound, screenshare, spotlight } = useCallControlState(
-    callEmbed.control
-  );
-
-  const [cords, setCords] = useState<RectCords>();
-
-  const handleOpenMenu: MouseEventHandler<HTMLButtonElement> = (evt) => {
-    setCords(evt.currentTarget.getBoundingClientRect());
-  };
-
-  const handleSpotlightClick = () => {
-    callEmbed.control.toggleSpotlight();
-    setCords(undefined);
-  };
-
-  const handleReactionsClick = () => {
-    callEmbed.control.toggleReactions();
-    setCords(undefined);
-  };
-
-  const handleSettingsClick = () => {
-    callEmbed.control.toggleSettings();
-    setCords(undefined);
-  };
-
+  const { microphone, screenshare } = useCallControlState(callEmbed.control);
   const [hangupState, hangup] = useAsyncCallback(
     useCallback(() => callEmbed.hangup(), [callEmbed])
   );
+  const [selectedQuality, setSelectedQuality] = useState<ScreenShareQuality['value']>(
+    SCREEN_SHARE_QUALITIES[0].value
+  );
+
   const exiting =
     hangupState.status === AsyncStatus.Loading || hangupState.status === AsyncStatus.Success;
 
+  const handleStartScreenshare = useCallback(
+    (quality: ScreenShareQuality['value']) => {
+      setSelectedQuality(quality);
+      callEmbed.control.startScreenshare(quality);
+    },
+    [callEmbed]
+  );
+
   return (
     <Box
-      ref={controlRef}
-      className={css.CallControlContainer}
-      justifyContent="Center"
+      className={css.CallControlOverlay}
+      shrink="No"
       alignItems="Center"
+      gap="200"
+      style={{
+        padding: config.space.S200,
+        borderRadius: config.radii.R500,
+      }}
     >
-      <SequenceCard
-        className={css.ControlCard}
-        variant="SurfaceVariant"
-        gap="400"
-        radii="500"
+      <Box
+        className={ContainerColor({ variant: 'Surface' })}
         alignItems="Center"
-        justifyContent="SpaceBetween"
+        gap="100"
+        style={{
+          padding: config.space.S100,
+          borderRadius: config.radii.R500,
+        }}
       >
-        <Box alignItems="Center" gap="Inherit" grow="Yes" direction={compact ? 'Column' : 'Row'}>
-          <Box shrink="No" alignItems="Inherit" justifyContent="Inherit" gap="200">
-            <MicrophoneButton
-              enabled={microphone}
-              onToggle={() => callEmbed.control.toggleMicrophone()}
-            />
-            <SoundButton enabled={sound} onToggle={() => callEmbed.control.toggleSound()} />
-          </Box>
-          {!compact && <ControlDivider />}
-          <Box shrink="No" alignItems="Inherit" justifyContent="Inherit" gap="200">
-            <VideoButton enabled={video} onToggle={() => callEmbed.control.toggleVideo()} />
-            <ScreenShareButton
-              enabled={screenshare}
-              onToggle={() => callEmbed.control.toggleScreenshare()}
-            />
-          </Box>
-        </Box>
-        {!compact && <ControlDivider />}
-        <Box alignItems="Center" gap="Inherit" grow="Yes" direction={compact ? 'Column' : 'Row'}>
-          <Box shrink="No" alignItems="Inherit" justifyContent="Inherit" gap="200">
-            <ChatButton />
-            <PopOut
-              anchor={cords}
-              position="Top"
-              align="Center"
-              content={
-                <FocusTrap
-                  focusTrapOptions={{
-                    initialFocus: false,
-                    onDeactivate: () => setCords(undefined),
-                    clickOutsideDeactivates: true,
-                    isKeyForward: (evt: KeyboardEvent) => evt.key === 'ArrowDown',
-                    isKeyBackward: (evt: KeyboardEvent) => evt.key === 'ArrowUp',
-                    escapeDeactivates: stopPropagation,
-                  }}
-                >
-                  <Menu>
-                    <Box direction="Column" style={{ padding: config.space.S100 }}>
-                      <MenuItem
-                        size="300"
-                        variant="Surface"
-                        radii="300"
-                        onClick={handleSpotlightClick}
-                      >
-                        <Text size="B300" truncate>
-                          {spotlight ? 'Grid View' : 'Spotlight View'}
-                        </Text>
-                      </MenuItem>
-                      <MenuItem
-                        size="300"
-                        variant="Surface"
-                        radii="300"
-                        onClick={handleReactionsClick}
-                      >
-                        <Text size="B300" truncate>
-                          Reactions
-                        </Text>
-                      </MenuItem>
-                      <MenuItem
-                        size="300"
-                        variant="Surface"
-                        radii="300"
-                        onClick={handleSettingsClick}
-                      >
-                        <Text size="B300" truncate>
-                          Settings
-                        </Text>
-                      </MenuItem>
-                    </Box>
-                  </Menu>
-                </FocusTrap>
-              }
-            >
-              <IconButton
-                variant="Surface"
-                fill="Soft"
-                radii="400"
-                size="400"
-                onClick={handleOpenMenu}
-                outlined
-                aria-pressed={!!cords}
-              >
-                <Icon size="400" src={Icons.VerticalDots} />
-              </IconButton>
-            </PopOut>
-          </Box>
-          <Box shrink="No" direction="Column">
-            <Button
-              style={{ minWidth: toRem(88) }}
-              variant="Critical"
-              fill="Solid"
-              onClick={hangup}
-              before={
-                exiting ? (
-                  <Spinner variant="Critical" fill="Solid" size="200" />
-                ) : (
-                  <Icon src={Icons.PhoneDown} size="200" filled />
-                )
-              }
-              disabled={exiting}
-            >
-              <Text size="B400">End</Text>
-            </Button>
-          </Box>
-        </Box>
-      </SequenceCard>
+        <MicrophoneButton
+          enabled={microphone}
+          onToggle={() => callEmbed.control.toggleMicrophone()}
+        />
+        <ScreenShareButton
+          enabled={screenshare}
+          selectedQuality={selectedQuality}
+          onStart={handleStartScreenshare}
+          onStop={() => callEmbed.control.toggleScreenshare()}
+        />
+        <HangupButton exiting={exiting} onLeave={hangup} />
+      </Box>
     </Box>
   );
 }

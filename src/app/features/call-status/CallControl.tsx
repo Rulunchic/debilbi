@@ -1,145 +1,67 @@
-import { Box, Chip, Icon, IconButton, Icons, Spinner, Text, Tooltip, TooltipProvider } from 'folds';
+import {
+  Box,
+  Icon,
+  IconButton,
+  Icons,
+  IconSrc,
+  Spinner,
+  Text,
+  Tooltip,
+  TooltipProvider,
+} from 'folds';
 import React, { useCallback } from 'react';
 import { useSetAtom } from 'jotai';
-import { StatusDivider } from './components';
 import { CallEmbed, useCallControlState } from '../../plugins/call';
 import { AsyncStatus, useAsyncCallback } from '../../hooks/useAsyncCallback';
 import { callEmbedAtom } from '../../state/callEmbed';
 
-type MicrophoneButtonProps = {
+type ControlButtonProps = {
   enabled: boolean;
-  onToggle: () => Promise<unknown>;
   disabled?: boolean;
+  tooltip: string;
+  enabledVariant: 'Surface' | 'Warning' | 'Success';
+  disabledVariant?: 'Surface' | 'Warning' | 'Success';
+  icon: IconSrc;
+  filled?: boolean;
+  size: '300' | '400';
+  iconSize: '100' | '200';
+  onClick: () => void;
 };
-function MicrophoneButton({ enabled, onToggle, disabled }: MicrophoneButtonProps) {
-  return (
-    <TooltipProvider
-      position="Top"
-      tooltip={
-        <Tooltip>
-          <Text size="T200">{enabled ? 'Turn Off Microphone' : 'Turn On Microphone'}</Text>
-        </Tooltip>
-      }
-    >
-      {(anchorRef) => (
-        <IconButton
-          ref={anchorRef}
-          variant={enabled ? 'Surface' : 'Warning'}
-          fill="Soft"
-          radii="300"
-          size="300"
-          onClick={() => onToggle()}
-          outlined
-          disabled={disabled}
-        >
-          <Icon size="100" src={enabled ? Icons.Mic : Icons.MicMute} filled={!enabled} />
-        </IconButton>
-      )}
-    </TooltipProvider>
-  );
-}
 
-type SoundButtonProps = {
-  enabled: boolean;
-  onToggle: () => void;
-  disabled?: boolean;
-};
-function SoundButton({ enabled, onToggle, disabled }: SoundButtonProps) {
+function ControlButton({
+  enabled,
+  disabled,
+  tooltip,
+  enabledVariant,
+  disabledVariant,
+  icon,
+  filled,
+  size,
+  iconSize,
+  onClick,
+}: ControlButtonProps) {
   return (
     <TooltipProvider
       position="Top"
+      delay={500}
       tooltip={
         <Tooltip>
-          <Text size="T200">{enabled ? 'Turn Off Sound' : 'Turn On Sound'}</Text>
+          <Text size="T200">{tooltip}</Text>
         </Tooltip>
       }
     >
       {(anchorRef) => (
         <IconButton
           ref={anchorRef}
-          variant={enabled ? 'Surface' : 'Warning'}
+          variant={enabled ? enabledVariant : disabledVariant ?? 'Surface'}
           fill="Soft"
-          radii="300"
-          size="300"
-          onClick={() => onToggle()}
+          radii="400"
+          size={size}
+          onClick={onClick}
           outlined
           disabled={disabled}
         >
-          <Icon
-            size="100"
-            src={enabled ? Icons.Headphone : Icons.HeadphoneMute}
-            filled={!enabled}
-          />
-        </IconButton>
-      )}
-    </TooltipProvider>
-  );
-}
-
-type VideoButtonProps = {
-  enabled: boolean;
-  onToggle: () => Promise<unknown>;
-  disabled?: boolean;
-};
-function VideoButton({ enabled, onToggle, disabled }: VideoButtonProps) {
-  return (
-    <TooltipProvider
-      position="Top"
-      tooltip={
-        <Tooltip>
-          <Text size="T200">{enabled ? 'Stop Camera' : 'Start Camera'}</Text>
-        </Tooltip>
-      }
-    >
-      {(anchorRef) => (
-        <IconButton
-          ref={anchorRef}
-          variant={enabled ? 'Success' : 'Surface'}
-          fill="Soft"
-          radii="300"
-          size="300"
-          onClick={() => onToggle()}
-          outlined
-          disabled={disabled}
-        >
-          <Icon
-            size="100"
-            src={enabled ? Icons.VideoCamera : Icons.VideoCameraMute}
-            filled={enabled}
-          />
-        </IconButton>
-      )}
-    </TooltipProvider>
-  );
-}
-
-type ScreenShareButtonProps = {
-  enabled: boolean;
-  onToggle: () => void;
-  disabled?: boolean;
-};
-function ScreenShareButton({ enabled, onToggle, disabled }: ScreenShareButtonProps) {
-  return (
-    <TooltipProvider
-      position="Top"
-      tooltip={
-        <Tooltip>
-          <Text size="T200">{enabled ? 'Stop Screenshare' : 'Start Screenshare'}</Text>
-        </Tooltip>
-      }
-    >
-      {(anchorRef) => (
-        <IconButton
-          ref={anchorRef}
-          variant={enabled ? 'Success' : 'Surface'}
-          fill="Soft"
-          radii="300"
-          size="300"
-          onClick={onToggle}
-          outlined
-          disabled={disabled}
-        >
-          <Icon size="100" src={Icons.ScreenShare} filled={enabled} />
+          <Icon size={iconSize} src={icon} filled={filled ?? enabled} />
         </IconButton>
       )}
     </TooltipProvider>
@@ -155,7 +77,7 @@ export function CallControl({
   compact: boolean;
   callJoined: boolean;
 }) {
-  const { microphone, video, sound, screenshare } = useCallControlState(callEmbed.control);
+  const { microphone, screenshare } = useCallControlState(callEmbed.control);
   const setCallEmbed = useSetAtom(callEmbedAtom);
 
   const [hangupState, hangup] = useAsyncCallback(
@@ -163,6 +85,8 @@ export function CallControl({
   );
   const exiting =
     hangupState.status === AsyncStatus.Loading || hangupState.status === AsyncStatus.Success;
+  const buttonSize = compact ? '300' : '400';
+  const iconSize = '100';
 
   const handleHangup = () => {
     if (!callJoined) {
@@ -173,54 +97,59 @@ export function CallControl({
   };
 
   return (
-    <Box shrink="No" alignItems="Center" gap="300">
-      <Box alignItems="Inherit" gap="200">
-        <MicrophoneButton
-          enabled={microphone}
-          onToggle={() => callEmbed.control.toggleMicrophone()}
-          disabled={!callJoined}
-        />
-        <SoundButton
-          enabled={sound}
-          onToggle={() => callEmbed.control.toggleSound()}
-          disabled={!callJoined}
-        />
-        {!compact && <StatusDivider />}
-        <VideoButton
-          enabled={video}
-          onToggle={() => callEmbed.control.toggleVideo()}
-          disabled={!callJoined}
-        />
-        {!compact && (
-          <ScreenShareButton
-            enabled={screenshare}
-            onToggle={() => callEmbed.control.toggleScreenshare()}
-            disabled={!callJoined}
-          />
-        )}
-      </Box>
-      <StatusDivider />
-      <Chip
-        variant="Critical"
-        radii="Pill"
-        fill="Soft"
-        before={
-          exiting ? (
-            <Spinner variant="Critical" fill="Soft" size="50" />
-          ) : (
-            <Icon size="50" src={Icons.PhoneDown} filled />
-          )
+    <Box shrink="No" alignItems="Center" gap="200">
+      <ControlButton
+        enabled={microphone}
+        disabled={!callJoined}
+        tooltip={microphone ? 'Turn Off Microphone' : 'Turn On Microphone'}
+        enabledVariant="Surface"
+        disabledVariant="Warning"
+        icon={microphone ? Icons.Mic : Icons.MicMute}
+        filled={!microphone}
+        size={buttonSize}
+        iconSize={iconSize}
+        onClick={() => callEmbed.control.toggleMicrophone()}
+      />
+      <ControlButton
+        enabled={screenshare}
+        disabled={!callJoined}
+        tooltip={screenshare ? 'Stop Screenshare' : 'Start Screenshare'}
+        enabledVariant="Success"
+        disabledVariant="Surface"
+        icon={Icons.ScreenShare}
+        filled={screenshare}
+        size={buttonSize}
+        iconSize={iconSize}
+        onClick={() => callEmbed.control.toggleScreenshare()}
+      />
+      <TooltipProvider
+        position="Top"
+        delay={500}
+        tooltip={
+          <Tooltip>
+            <Text size="T200">Leave Voice Chat</Text>
+          </Tooltip>
         }
-        disabled={exiting}
-        outlined
-        onClick={handleHangup}
       >
-        {!compact && (
-          <Text as="span" size="L400">
-            End
-          </Text>
+        {(anchorRef) => (
+          <IconButton
+            ref={anchorRef}
+            variant="Critical"
+            fill="Soft"
+            radii="400"
+            size={buttonSize}
+            onClick={handleHangup}
+            disabled={exiting}
+            outlined
+          >
+            {exiting ? (
+              <Spinner variant="Critical" fill="Soft" size={iconSize} />
+            ) : (
+              <Icon size={iconSize} src={Icons.PhoneDown} filled />
+            )}
+          </IconButton>
         )}
-      </Chip>
+      </TooltipProvider>
     </Box>
   );
 }

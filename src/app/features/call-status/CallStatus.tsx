@@ -29,7 +29,8 @@ export function CallStatus({ callEmbed }: CallStatusProps) {
 
   const compact = screenSize === ScreenSize.Mobile;
 
-  const memberVisible = callJoined && callMembers.length > 0;
+  const hasMembers = callJoined && callMembers.length > 0;
+  const showMemberGlance = callJoined && callMembers.length > 1;
 
   return (
     <Box
@@ -39,8 +40,11 @@ export function CallStatus({ callEmbed }: CallStatusProps) {
       alignItems={compact ? undefined : 'Center'}
       direction={compact ? 'Column' : 'Row'}
     >
+      <Box shrink="No" alignItems="Center" gap="200">
+        <CallControl callJoined={callJoined} compact={compact} callEmbed={callEmbed} />
+      </Box>
       <Box grow="Yes" alignItems="Center" gap="200">
-        {memberVisible ? (
+        {hasMembers ? (
           <Box shrink="No">
             <LiveChip count={callMembers.length} room={room} members={callMembers} />
           </Box>
@@ -61,20 +65,11 @@ export function CallStatus({ callEmbed }: CallStatusProps) {
             </>
           )}
         </Box>
-        {memberVisible && (
+        {showMemberGlance && (
           <Box shrink="No">
             <MemberGlance room={room} members={callMembers} speakers={speakers} />
           </Box>
         )}
-      </Box>
-      {memberVisible && !compact && <StatusDivider />}
-      <Box shrink="No" alignItems="Center" gap="Inherit">
-        {compact && (
-          <Box grow="Yes">
-            <CallRoomName room={room} />
-          </Box>
-        )}
-        <CallControl callJoined={callJoined} compact={compact} callEmbed={callEmbed} />
       </Box>
     </Box>
   );
