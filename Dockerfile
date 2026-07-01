@@ -11,7 +11,7 @@ RUN npm run build
 
 
 ## App
-FROM nginx:1.29.8-alpine
+FROM nginx:1.31.2-alpine
 
 LABEL org.opencontainers.image.title="Debilbi" \
   org.opencontainers.image.description="Matrix-powered voice and chat service" \
